@@ -11,9 +11,10 @@
 #define COL 1
 #define VALUE 2
 
-void mallocEllCoo(int** ellcol,int** ellvalue,int** coo,int totalNum);
+void mallocEllCoo();
+void reallocEll();
 void quickSort(int* arr,int startPos, int endPos);//快排
 int duplicate(int* arr,int* temp,int startPos,int endPos);//去重
-void addInEllCoo(int* arr,int n,int row,int** ellcol,int** ellvalue,int** coo);//存入稀疏矩阵ELL+COO
+void addInEllCoo(int* arr,int n,int row);//存入稀疏矩阵ELL+COO
 
 #endif //LAB2_MATRIX_H

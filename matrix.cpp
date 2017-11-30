@@ -6,7 +6,7 @@
 #include <string.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16;
+int coocol=0,coototal=16,elltotal=MAXSIZE;
 int **ellcol,**ellvalue,**cooarray;
 
 void mallocEllCoo(){
@@ -31,7 +31,13 @@ void mallocEllCoo(){
     }
     return;
 }
-void addInEllCoo(int* arr,int n,int row,int** ellcol,int** ellvalue,int** coo){
+void reallocEll(){
+    ellcol=(int**)realloc(ellcol,sizeof(int*)); //第一维
+    ellcol[elltotal]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
+    memset(ellcol[elltotal],-1, ELL_LEN* sizeof(int));
+    elltotal++;
+}
+void addInEllCoo(int* arr,int n,int row){
     int i,j;
     for(i=0;i<n;i++){
         if(i<ELL_LEN) {//ELL还可存
@@ -42,14 +48,14 @@ void addInEllCoo(int* arr,int n,int row,int** ellcol,int** ellvalue,int** coo){
             if(coocol>=coototal){//COO矩阵溢出
                 for(j=0;j<3; j++)
                 {
-                    coo[j]=(int*)realloc(coo[j],2*coototal* sizeof(int));//COO长度翻倍
+                    cooarray[j]=(int*)realloc(cooarray[j],2*coototal* sizeof(int));//COO长度翻倍
                 }
                 coototal*=2;
                 //printf("coototal:%d\n",coototal);
             }
-            coo[ROW][coocol]=row;
-            coo[COL][coocol]=arr[i];
-            coo[VALUE][coocol]=1;
+            cooarray[ROW][coocol]=row;
+            cooarray[COL][coocol]=arr[i];
+            cooarray[VALUE][coocol]=1;
             coocol++;
         }
     }
