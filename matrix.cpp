@@ -1,0 +1,74 @@
+//
+// Created by liuran94 on 17-11-30.
+//
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "matrix.h"
+
+int coocol=0,coototal=16;
+void addInEllCoo(int* arr,int n,int row,int** ellcol,int** ellvalue,int** coo){
+    int i,j;
+    for(i=0;i<n;i++){
+        if(i<ELL_LEN) {//ELL还可存
+            ellcol[row][i] = arr[i];
+            ellvalue[row][i] = 1;
+        }
+        else{//存入COO
+            if(coocol>=coototal){//COO矩阵溢出
+                for(j=0;j<3; j++)
+                {
+                    coo[j]=(int*)realloc(coo[j],2*coototal* sizeof(int));//COO长度翻倍
+                }
+                coototal*=2;
+                //printf("coototal:%d\n",coototal);
+            }
+            coo[ROW][coocol]=row;
+            coo[COL][coocol]=arr[i];
+            coo[VALUE][coocol]=1;
+            coocol++;
+        }
+    }
+}
+void quickSort(int* arr,int startPos, int endPos) {
+    int i, j;
+    int key;
+    key = arr[startPos];
+    i = startPos;
+    j = endPos;
+    while (i<j)
+    {
+        while (arr[j] >= key && i<j)--j; //————1 从后往去前扫，直到找到一个a[j]<key或遍历完
+        arr[i] = arr[j];
+        while (arr[i] <= key && i<j)++i; //————2 从后往去前扫，直到找到一个a[i]>key或遍历完
+        arr[j] = arr[i];
+    }
+    arr[i] = key;
+    if (i - 1>startPos) quickSort(arr, startPos, i - 1); //————1 如果key前还有两个及以上的数，排key前的数（有一个的话自然就不用排了）
+    if (endPos>i + 1) quickSort(arr, i + 1, endPos);//————2 如果key后还有两个及以上的数，排key后的数
+}
+int duplicate(int* arr,int* temp,int startPos,int endPos){
+    int n,i=0,j=0,tindex=0;
+    bool flag= false;
+
+    while(arr[i]!=-1){
+        n=arr[i];
+        j=0;
+        while(temp[j]!=-1){
+            if(temp[j]==n){
+                flag= true;
+                break;
+            }
+            j++;
+        }
+        i++;
+        if(flag){
+            flag= false;
+            continue;
+        }
+        temp[tindex]=n;
+        tindex++;
+        flag= false;
+    }
+    return tindex;//返回新数组的长度
+}
