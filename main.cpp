@@ -2,17 +2,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <queue>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/epoll.h>
 #include "url.h"
-
+#include "matrix.h"
 
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
@@ -38,7 +35,6 @@ int urlId=0;
 void sendRequest(int isIndex,int *socket_client);
 int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree);
 void setnoblocking(int socket_client);
-
 
 void setnoblocking(int socket_client){
     int opts;
@@ -71,7 +67,6 @@ void sendRequest(int isIndex,int *socket_client){
     send(*socket_client,request,strlen(request),0);
     return;
 }
-
 int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree){
     //Download Page
     char *PageBuf=(char *)malloc(ContentLength);
@@ -127,12 +122,14 @@ int main(int argc,char* argv[]){
     int num = 0;
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
-
-    FILE *out;
     struct sockaddr_in serveraddr;
     char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
-    initQueue(&q);
+    FILE *out;
+    if((out = fopen("./result.txt", "w")) == NULL){
+        exit(1);
+    }
+
     memset(&serveraddr,0,sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     //serveraddr.sin_port = htons(atoi(argv[2]));
@@ -142,16 +139,15 @@ int main(int argc,char* argv[]){
     //strcpy(currentURL, argv[1]);
     strcpy(currentURL, "http://news.sohu.com");
 
+    initQueue(&q);
     while(!isEmpty(q)){//保证开始时队列为空，可删去
         deQueue(&q, request);
     }
-
     enQueue(&q,currentURL);
 
-    if((out = fopen("./result.txt", "w")) == NULL){
-        exit(1);
-    }
     AC_STRUCT *tree= ac_alloc();
+    mallocEllCoo();
+
     int firstid;
     bool firstflag= false;
     firstid=ac_add_string(tree,currentURL, strlen(currentURL), &urlId,&firstflag);

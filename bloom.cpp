@@ -9,6 +9,7 @@
 #include<string>
 #include "bloom.h"
 using namespace std;
+
 int p_table[MAX_URLPATH_NUM] = { 0 };
 int myEncrypt(char *str, char *key){
     assert(str != NULL);
@@ -38,6 +39,7 @@ int bloomFilter(char *path){
     int i;
     for (i = 0; i < 8; i++) {
         char *key;
+        //printf("bloompath:%s\n",path);
         key = strdup(salt[i].c_str());
         f[i] = myEncrypt(path, key);
         free(key);

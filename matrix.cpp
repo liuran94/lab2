@@ -6,19 +6,19 @@
 #include <string.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16,elltotal=MAXSIZE;
+int coocol=0,coototal=16,elltotal=MAXSIZE/100;
 int **ellcol,**ellvalue,**cooarray;
 
 void mallocEllCoo(){
     int i;
-    ellcol=(int**)malloc(MAXSIZE*sizeof(int*)); //第一维
-    for(i=0;i<MAXSIZE; i++)
+    ellcol=(int**)malloc(elltotal*sizeof(int*)); //第一维
+    for(i=0;i<elltotal; i++)
     {
         ellcol[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
         memset(ellcol[i],-1, ELL_LEN* sizeof(int));
     }
-    ellvalue=(int**)malloc(MAXSIZE*sizeof(int*)); //第一维
-    for(i=0;i<MAXSIZE; i++)
+    ellvalue=(int**)malloc(elltotal*sizeof(int*)); //第一维
+    for(i=0;i<elltotal; i++)
     {
         ellvalue[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
         memset(ellvalue[i],-1, ELL_LEN* sizeof(int));
@@ -32,13 +32,18 @@ void mallocEllCoo(){
     return;
 }
 void reallocEll(){
-    ellcol=(int**)realloc(ellcol,sizeof(int*)); //第一维
+    ellcol=(int**)realloc(ellcol,(elltotal+1)*sizeof(int*)); //第一维
     ellcol[elltotal]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
     memset(ellcol[elltotal],-1, ELL_LEN* sizeof(int));
+
+    ellvalue=(int**)realloc(ellvalue,(elltotal+1)*sizeof(int*)); //第一维
+    ellvalue[elltotal]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
+    memset(ellvalue[elltotal],-1, ELL_LEN* sizeof(int));
     elltotal++;
 }
 void addInEllCoo(int* arr,int n,int row){
     int i,j;
+    if(row>=elltotal) reallocEll();
     for(i=0;i<n;i++){
         if(i<ELL_LEN) {//ELL还可存
             ellcol[row][i] = arr[i];
