@@ -7,6 +7,30 @@
 #include "matrix.h"
 
 int coocol=0,coototal=16;
+int **ellcol,**ellvalue,**cooarray;
+
+void mallocEllCoo(){
+    int i;
+    ellcol=(int**)malloc(MAXSIZE*sizeof(int*)); //第一维
+    for(i=0;i<MAXSIZE; i++)
+    {
+        ellcol[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
+        memset(ellcol[i],-1, ELL_LEN* sizeof(int));
+    }
+    ellvalue=(int**)malloc(MAXSIZE*sizeof(int*)); //第一维
+    for(i=0;i<MAXSIZE; i++)
+    {
+        ellvalue[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
+        memset(ellvalue[i],-1, ELL_LEN* sizeof(int));
+    }
+    cooarray=(int**)malloc(3*sizeof(int*)); //第一维
+    for(i=0;i<3; i++)
+    {
+        cooarray[i]=(int*)malloc(coototal* sizeof(int));//第二维
+        memset(cooarray[i],-1,coototal* sizeof(int));
+    }
+    return;
+}
 void addInEllCoo(int* arr,int n,int row,int** ellcol,int** ellvalue,int** coo){
     int i,j;
     for(i=0;i<n;i++){

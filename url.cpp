@@ -8,6 +8,7 @@
 #include "ac.h"
 #include "url.h"
 #include "bloom.h"
+#include "matrix.h"
 int getPath(char currenturl[],char* path){
     int i,j=0;
 
@@ -38,15 +39,19 @@ int getPath(char currenturl[],char* path){
 int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int *id){
 
     int state;
-    int i,j=0,n,urlid;
+    int i,j=0,n,urlid,masterid;
     char currentchar;
     char urlbuf[MAX_PATH_LENGTH];
     char *searchedurl;
     char *writeUrl=(char *)malloc(sizeof(char)*strlen(url)+20);
     char urlhttp[13]="http://news.";
+    int abuffer[MAXSIZE],temp[MAXSIZE],abindex=0;
     bool flag=true;
-    state = 0;
 
+    state = 0;
+    masterid=ac_add_string(tree,url,strlen(url),&i,&flag);
+    memset(abuffer,-1, MAXSIZE* sizeof(int));
+    memset(temp,-1, MAXSIZE* sizeof(int));
 
     for(i=0; currentpage[i] != '\0'; i++){
         currentchar=currentpage[i];
@@ -146,6 +151,8 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int
                         sprintf(writeUrl,"%s %d\n",searchedurl,urlid);
                         fputs(writeUrl,out);
                     }
+                    abuffer[abindex]=urlid;
+                    abindex++;
 
                     if(!bloomFilter(searchedurl) && (strlen(searchedurl) < MAX_PATH_LENGTH)) {
                         enQueue(q,searchedurl);
@@ -156,6 +163,9 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int
                 break;
         }
     }
+    quickSort(abuffer,0,abindex-1);
+    n=duplicate(abuffer,temp,0,abindex-1);
+    //addInEllCoo(temp,n,masterid,ellcol,ellvalue,cooarray);
 
     return 0;
 }
