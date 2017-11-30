@@ -39,8 +39,11 @@ void reallocEll(){
 }
 void addInEllCoo(int* arr,int n,int row){
     int i,j;
+    //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
+    if(n>ELL_LEN-1)
+        ellcol[row][ELL_LEN]=1;
     for(i=0;i<n;i++){
-        if(i<ELL_LEN) {//ELL还可存
+        if(i<ELL_LEN-1) {//ELL还可存
             ellcol[row][i] = arr[i];
             ellvalue[row][i] = 1;
         }
@@ -77,6 +80,7 @@ void quickSort(int* arr,int startPos, int endPos) {
     if (i - 1>startPos) quickSort(arr, startPos, i - 1); //————1 如果key前还有两个及以上的数，排key前的数（有一个的话自然就不用排了）
     if (endPos>i + 1) quickSort(arr, i + 1, endPos);//————2 如果key后还有两个及以上的数，排key后的数
 }
+//将arr数组中的数据去重后存入temp中
 int duplicate(int* arr,int* temp,int startPos,int endPos){
     int n,i=0,j=0,tindex=0;
     bool flag= false;
