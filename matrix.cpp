@@ -6,7 +6,7 @@
 #include <string.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16,elltotal=20;
+int coocol=0,coototal=16,elltotal=1024;
 int **ellcol,**ellvalue,**cooarray;
 
 void printEllCoo(){
@@ -58,60 +58,65 @@ void mallocEllCoo(){
 
     return;
 }
-void reallocEll(){
-    ellcol=(int**)realloc(ellcol,(elltotal+1)*sizeof(int*)); //第一维
-    ellcol[elltotal]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
-    memset(ellcol[elltotal],-1, ELL_LEN* sizeof(int));
+void reallocEll(int row){
+    ellcol=(int**)realloc(ellcol,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
+    for(int i=0;i<(row-elltotal+1);i++) {
+        ellcol[elltotal] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
+        memset(ellcol[elltotal], -1, ELL_LEN * sizeof(int));
+        ellcol[i][ELL_LEN]=0;
+    }
 
-    ellvalue=(int**)realloc(ellvalue,(elltotal+1)*sizeof(int*)); //第一维
-    ellvalue[elltotal]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
-    memset(ellvalue[elltotal],-1, ELL_LEN* sizeof(int));
-    elltotal++;
+    ellvalue=(int**)realloc(ellvalue,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
+    for(int i=0;i<(row-elltotal+1);i++) {
+        ellvalue[elltotal] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
+        memset(ellvalue[elltotal], -1, ELL_LEN * sizeof(int));
+    }
+    elltotal=row+1;
 }
 void addInEllCoo(int* arr,int n,int row){
     int i,j;
     printf("row:%d\n",row);
-    if(row>=elltotal) reallocEll();
+    if(row>=elltotal) reallocEll(row);
     //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
-    ellcol[row][0]=row;
+    //ellcol[row][0]=row;
 
     //printf("Nellcol:%d\n",ellcol[row][ELL_LEN]);
-//    if(ellcol[row][ELL_LEN]<ELL_LEN) {
-//        for (i = 0; i < n; i++) {
-//            if (i+ellcol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
-//                ellcol[row][i+ellcol[row][ELL_LEN]] = arr[i];
-//                ellvalue[row][i+ellcol[row][ELL_LEN]] = 1;
-//            } else {//存入COO
-//                if (coocol >= coototal) {//COO矩阵溢出
-//                    for (j = 0; j < 3; j++) {
-//                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
-//                    }
-//                    coototal *= 2;
-//                    //printf("coototal:%d\n",coototal);
-//                }
-//                cooarray[ROW][coocol] = row;
-//                cooarray[COL][coocol] = arr[i];
-//                cooarray[VALUE][coocol] = 1;
-//                coocol++;
-//            }
-//        }
-//    }
-//    else{
-//        for (i = 0; i < n; i++) {
-//                if (coocol >= coototal) {//COO矩阵溢出
-//                    for (j = 0; j < 3; j++) {
-//                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
-//                    }
-//                    coototal *= 2;
-//                    //printf("coototal:%d\n",coototal);
-//                }
-//                cooarray[ROW][coocol] = row;
-//                cooarray[COL][coocol] = arr[i];
-//                cooarray[VALUE][coocol] = 1;
-//                coocol++;
-//        }
-//    }
-//    ellcol[row][ELL_LEN]=ellcol[row][ELL_LEN]+n;
+    if(ellcol[row][ELL_LEN]<ELL_LEN) {
+        for (i = 0; i < n; i++) {
+            if (i+ellcol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
+                ellcol[row][i+ellcol[row][ELL_LEN]] = arr[i];
+                ellvalue[row][i+ellcol[row][ELL_LEN]] = 1;
+            } else {//存入COO
+                if (coocol >= coototal) {//COO矩阵溢出
+                    for (j = 0; j < 3; j++) {
+                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
+                    }
+                    coototal *= 2;
+                    //printf("coototal:%d\n",coototal);
+                }
+                cooarray[ROW][coocol] = row;
+                cooarray[COL][coocol] = arr[i];
+                cooarray[VALUE][coocol] = 1;
+                coocol++;
+            }
+        }
+    }
+    else{
+        for (i = 0; i < n; i++) {
+                if (coocol >= coototal) {//COO矩阵溢出
+                    for (j = 0; j < 3; j++) {
+                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
+                    }
+                    coototal *= 2;
+                    //printf("coototal:%d\n",coototal);
+                }
+                cooarray[ROW][coocol] = row;
+                cooarray[COL][coocol] = arr[i];
+                cooarray[VALUE][coocol] = 1;
+                coocol++;
+        }
+    }
+    ellcol[row][ELL_LEN]=ellcol[row][ELL_LEN]+n;
 }
 void quickSort(int* arr,int startPos, int endPos) {
     int i, j;
