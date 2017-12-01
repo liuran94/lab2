@@ -33,10 +33,10 @@ int bloomFilter(char *path){
 
     int mod = 33 * MAX_URLPATH_NUM;
     int flag = 0;
-    printf("before\n");
+    //printf("before\n");
 
     string salt[] = { "Dm", "VB", "ui", "LK", "uj", "RD", "we", "fc" };
-    printf("after\n");
+    //printf("after\n");
     int f[8] = { 0 };
     int g[8] = { 0 };
     int i;

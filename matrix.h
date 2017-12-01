@@ -11,6 +11,7 @@
 #define COL 1
 #define VALUE 2
 
+void printEllCoo();
 void mallocEllCoo();
 void reallocEll();
 void quickSort(int* arr,int startPos, int endPos);//快排

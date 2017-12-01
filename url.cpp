@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+//#include <queue>
 #include "queue.h"
 #include "ac.h"
 #include "url.h"
@@ -36,7 +37,7 @@ int getPath(char currenturl[],char* path){
     return 1;
 }
 
-int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int *id){
+int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int *id){
 
     int state;
     int i,j=0,n,urlid,masterid;
@@ -156,6 +157,7 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int
 
                     if(!bloomFilter(searchedurl) && (strlen(searchedurl) < MAX_PATH_LENGTH)) {
                         enQueue(q,searchedurl);
+                        //q.push(searchedurl);
                     }
                     state=0;
                     j=0;
@@ -166,7 +168,8 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int
 
     quickSort(abuffer,0,abindex-1);
     n=duplicate(abuffer,temp,0,abindex-1);
-    addInEllCoo(temp,n,masterid);
+    //addInEllCoo(temp,n,masterid);
+    //printEllCoo();
 
     return 0;
 }

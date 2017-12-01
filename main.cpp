@@ -30,6 +30,7 @@ int epfd;
 struct epoll_event ev;
 struct epoll_event events[MAX_CONNECT_NUM];
 Queue q;
+//queue<char*> q;
 int urlId=0;
 
 void sendRequest(int isIndex,int *socket_client);
@@ -101,8 +102,6 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
         endPattern[7-j]=PageBuf[byteread-i];
         i++;j++;
     }
-    //printf("endpattern: %s\n",endPattern);
-    if(strcmp(endPattern,"</html>")==0) return 0;
 
     //printf("num = %d    ", *num);
     *num=*num+1;
@@ -113,7 +112,9 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     memset(currentURL, 0, MAX_PATH_LENGTH);
 
     printf("URL:%s\n",url);
-    printf("Queue length: %d\n", q.size);
+    printf("Queue length: %d\n",q.size);
+    //printf("endpattern: %s\n",endPattern);
+    if(strcmp(endPattern,"</html>")==0) return 0;
     return 1;
 }
 
@@ -142,11 +143,14 @@ int main(int argc,char* argv[]){
     initQueue(&q);
     while(!isEmpty(q)){//保证开始时队列为空，可删去
         deQueue(&q, request);
+        //q.pop();
     }
     enQueue(&q,currentURL);
+    //q.push(currentURL);
 
     AC_STRUCT *tree= ac_alloc();
     mallocEllCoo();
+    //printEllCoo();
 
     int firstid;
     bool firstflag= false;
@@ -207,7 +211,8 @@ int main(int argc,char* argv[]){
             else if(events[i].events&EPOLLOUT) //有数据待发送，写socket
             {
                 deQueue(&q, currentURL);
-
+                //strcpy(currentURL,q.front());
+                //q.pop();
                 memset(path, 0, MAX_PATH_LENGTH);
                 isIndex = getPath(currentURL,path);
 
