@@ -4,10 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "matrix.h"
 
 int coocol=0,coototal=16,elltotal=1024;
 int **ellcol,**ellvalue,**cooarray;
+
+int **AEllCol,**ACooArray;
+double **AEllValue,*ACooValue;
+int ACooCol=0,ACooTotal=16,AEllTotal=1024;
+double *pageRank;
 
 void printEllCoo(){
     //测试打印部分数组
@@ -160,4 +166,82 @@ int duplicate(int* arr,int* temp,int startPos,int endPos){
         flag= false;
     }
     return tindex;//返回新数组的长度
+}
+
+//根据行列号在稀疏矩阵G中找到对应的元素
+int getGValueByIndex(int row,int col){
+    //取ell该行最后一个数字  表示该行总共的元素个数
+    int total=ellcol[row][ELL_LEN];
+    int i;
+    for(i=0;i<total;i++){
+        if(i<ELL_LEN){
+            if(ellcol[row][i]==col)
+                return 1;
+        }
+        else{
+            for(i=0;i<coocol;i++){
+                if(cooarray[ROW][i]==row&&cooarray[COL][i]==col)
+                    return 1;
+            }
+        }
+    }
+    return 0;
+}
+void setAValueByIndex(int row,int col,double value){
+
+}
+
+//将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
+//根据修正公式得到A矩阵的值
+void generateA(){
+    int i,j,total;
+    double value;
+    //列优先遍历
+    for(i=0;i<elltotal;i++){
+        total=0;
+        for (j = 0; j < elltotal; j++) {
+            if(getGValueByIndex(j,i)==1)
+                total++;
+        }
+        for (j = 0; j < elltotal; j++) {
+            //计算GM矩阵该位置的值
+            value=1/total;
+            //计算A矩阵该位置的值
+            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/elltotal;
+            //写入A矩阵
+            setAValueByIndex(j,i,value);
+        }
+    }
+}
+
+//pageRank向量初始化长度等于总共的链接数且值为1的数组
+void initPageRank(){
+
+}
+
+void generatePageRank(){
+    int i,j,k,col;
+    bool successFlag= false;
+    double value;
+    while (!successFlag){
+        successFlag=true;
+        for(i=0;i<AEllTotal;i++){
+            value=0;
+            //int num=AEllCol[i][ELL_LEN+1]-ELL_LEN;
+            for(j=0;j<ELL_LEN;j++){
+                col=AEllCol[i][j];
+                value+=pageRank[col]*AEllValue[i][j];
+            }
+            for(k=0;k<ACooCol;k++){
+                if(ACooArray[ROW][k]==i){
+                    col=ACooArray[COL][k];
+                    value+=pageRank[col]*ACooValue[k];
+                }
+            }
+            if(fabs(pageRank[i]-value)>LIMIT)
+                successFlag= false;
+            pageRank[i]=value;
+        }
+    }
+
 }
