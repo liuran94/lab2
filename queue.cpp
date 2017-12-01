@@ -19,19 +19,19 @@ void enQueue(Queue *queue,char* nodeData){
     queueNode *newNode=(queueNode*)malloc(sizeof(queueNode));
     strcpy(newNode->data,nodeData);
     newNode->next=NULL;
-    (*queue).tail->next=newNode;
-    (*queue).tail=newNode;
-    (*queue).size++;
+    queue->tail->next=newNode;
+    queue->tail=newNode;
+    queue->size++;
 }
 bool deQueue(Queue *queue, char*nodeData){
-    if((*queue).tail == (*queue).head)
+    if(queue->tail == queue->head)
         return false;
-    queueNode *q=(*queue).head->next;
+    queueNode *q=queue->head->next;
     strcpy(nodeData,q->data);
-    (*queue).head->next=q->next;
-    if((*queue).tail==q)
-        (*queue).tail=(*queue).head;
+    queue->head->next=q->next;
+    if(queue->tail==q)
+        queue->tail=(*queue).head;
     free(q);
-    (*queue).size--;
+    queue->size--;
     return true;
 }

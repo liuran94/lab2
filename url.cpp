@@ -43,8 +43,8 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int
     int i,j=0,n,urlid,masterid;
     char currentchar;
     char urlbuf[MAX_PATH_LENGTH];
-    char *searchedurl;
-    char *writeUrl=(char *)malloc(sizeof(char)*strlen(url)+20);
+    char searchedurl[MAX_PATH_LENGTH];
+    char writeUrl[MAX_PATH_LENGTH];
     char urlhttp[13]="http://news.";
     int abuffer[MAXSIZE],temp[MAXSIZE],abindex=0;
     bool flag=true;
@@ -139,12 +139,13 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int
                     }
                 }
                 if(n==12){
-                    searchedurl=(char*)malloc(sizeof(urlbuf));
+
                     if(urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'){//去末尾的回车或者/
                         urlbuf[j-1]='\0';
                     }
+                    memset(searchedurl,0,MAX_PATH_LENGTH);
+                    memset(writeUrl,0,MAX_PATH_LENGTH);
                     strcpy(searchedurl,urlbuf);
-
 
                     flag=false;
                     urlid=ac_add_string(tree,searchedurl,strlen(searchedurl),id,&flag);
@@ -168,8 +169,8 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int
 
     quickSort(abuffer,0,abindex-1);
     n=duplicate(abuffer,temp,0,abindex-1);
-    //addInEllCoo(temp,n,masterid);
-    //printEllCoo();
+    addInEllCoo(temp,n,masterid);
+    printEllCoo();
 
     return 0;
 }

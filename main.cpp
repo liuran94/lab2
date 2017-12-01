@@ -29,12 +29,12 @@ char path[MAX_PATH_LENGTH];
 int epfd;
 struct epoll_event ev;
 struct epoll_event events[MAX_CONNECT_NUM];
-Queue q;
+
 //queue<char*> q;
 int urlId=0;
 
 void sendRequest(int isIndex,int *socket_client);
-int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree);
+int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree,Queue q);
 void setnoblocking(int socket_client);
 
 void setnoblocking(int socket_client){
@@ -68,7 +68,7 @@ void sendRequest(int isIndex,int *socket_client){
     send(*socket_client,request,strlen(request),0);
     return;
 }
-int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree){
+int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree,Queue q){
     //Download Page
     char *PageBuf=(char *)malloc(ContentLength);
     char *endPattern=(char *)malloc(sizeof(char)*8);
@@ -110,10 +110,12 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     searchURL(PageBuf,url,out,tree,&q,&urlId);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
-
+    //printf("endpattern: %s\n",PageBuf);
+    free(PageBuf);
+    free(endPattern);
     printf("URL:%s\n",url);
     printf("Queue length: %d\n",q.size);
-    //printf("endpattern: %s\n",endPattern);
+
     if(strcmp(endPattern,"</html>")==0) return 0;
     return 1;
 }
@@ -124,7 +126,8 @@ int main(int argc,char* argv[]){
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
-    char ipaddress[]="10.108.86.80";
+    char ipaddress[]="118.244.253.70";
+    //char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
     FILE *out;
     if((out = fopen("./result.txt", "w")) == NULL){
@@ -139,7 +142,8 @@ int main(int argc,char* argv[]){
 
     //strcpy(currentURL, argv[1]);
     strcpy(currentURL, "http://news.sohu.com");
-
+    //strcpy(currentURL, "http://www.baidu.com");
+    Queue q;
     initQueue(&q);
     while(!isEmpty(q)){//保证开始时队列为空，可删去
         deQueue(&q, request);
@@ -150,7 +154,7 @@ int main(int argc,char* argv[]){
 
     AC_STRUCT *tree= ac_alloc();
     mallocEllCoo();
-    //printEllCoo();
+    printEllCoo();
 
     int firstid;
     bool firstflag= false;
@@ -186,13 +190,13 @@ int main(int argc,char* argv[]){
 
         }
         n = epoll_wait(epfd,events,MAX_CONNECT_NUM,200);
-        //printf("wait:%d,%d\n",n,connectNum);
+        printf("wait:%d,%d\n",n,connectNum);
         for(int i=0;i<n;i++){
 
             if( events[i].events&EPOLLIN ) //接收到数据，读socket
             {
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
-                state=revResponse(arg->sock_c, ContentLength, &num, out,arg->url,tree);
+                state=revResponse(arg->sock_c, ContentLength, &num, out,arg->url,tree,q);
                 if(state==0){//全部接收完成
                     close(arg->sock_c);
                     connectNum--;

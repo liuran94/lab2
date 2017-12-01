@@ -74,6 +74,7 @@ void addInEllCoo(int* arr,int n,int row){
     if(row>=elltotal) reallocEll();
     //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
     ellcol[row][0]=row;
+
     //printf("Nellcol:%d\n",ellcol[row][ELL_LEN]);
 //    if(ellcol[row][ELL_LEN]<ELL_LEN) {
 //        for (i = 0; i < n; i++) {
