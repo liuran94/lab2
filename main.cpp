@@ -95,7 +95,7 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     PageBuf[byteread] = '\0';
     int i=0,j=0;
     while(j<8){
-        if(PageBuf[byteread-i]=='\n'){
+        if(PageBuf[byteread-i]=='\n'||PageBuf[byteread-i]=='\r'||PageBuf[byteread-i]=='\f'){
             i++;
             continue;
         }
@@ -110,13 +110,14 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     searchURL(PageBuf,url,out,tree,q,&urlId);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
-    //printf("endpattern:%s\n",endPattern);
+    printf("endpattern:%s\n",endPattern);
 
     free(PageBuf);
     printf("URL:%s\n",url);
     printf("Queue length: %d\n",q->size);
 
-    if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0){
+    if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0
+       ||strcmp(endPattern,"script>")==0||strcmp(endPattern,"nclude>")==0){
         free(endPattern);
         return 0;
     }
