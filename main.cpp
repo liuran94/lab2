@@ -116,7 +116,7 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     printf("URL:%s\n",url);
     printf("Queue length: %d\n",q->size);
 
-    if(strcmp(endPattern,"</html>")==0){
+    if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0){
         free(endPattern);
         return 0;
     }
