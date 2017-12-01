@@ -6,7 +6,7 @@
 #include <string.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16,elltotal=MAXSIZE/100;
+int coocol=0,coototal=16,elltotal=1;
 int **ellcol,**ellvalue,**cooarray;
 
 void mallocEllCoo(){

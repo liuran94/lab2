@@ -163,6 +163,7 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue *q,int
                 break;
         }
     }
+
     quickSort(abuffer,0,abindex-1);
     n=duplicate(abuffer,temp,0,abindex-1);
     addInEllCoo(temp,n,masterid);
