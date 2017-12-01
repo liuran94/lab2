@@ -10,6 +10,7 @@
 #include <sys/epoll.h>
 #include "url.h"
 #include "matrix.h"
+#include "queue.h"
 
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
@@ -129,6 +130,7 @@ int main(int argc,char* argv[]){
     int socket_client;
     int num = 0;
     int isIndex;
+    int outflag=0;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
     //char ipaddress[]="118.244.253.70";
@@ -174,8 +176,14 @@ int main(int argc,char* argv[]){
     for(int i=0;i<MAX_CONNECT_NUM;i++) {
         events[i].data.fd=-1;
     }
-    while(!isEmpty(q)||connectNum<MAX_CONNECT_NUM)
+    while(true)
     {
+        if(outflag==1&&q.size>0){//队列开始增加
+            outflag=2;//等待队列收敛
+        }
+        if(outflag==2&&q.size==0){//队列收敛结束
+            break;//跳出主循环
+        }
         while(connectNum<q.size&&connectNum<MAX_CONNECT_NUM){
 
                 socket_client = socket(AF_INET,SOCK_STREAM,0);
@@ -223,6 +231,9 @@ int main(int argc,char* argv[]){
                 deQueue(&q, currentURL);
                 //strcpy(currentURL,q.front());
                 //q.pop();
+                if(outflag==0&&q.size==0){//第一次pop主页，队列为空
+                    outflag=1;//等待第一次入队
+                }
                 memset(path, 0, MAX_PATH_LENGTH);
                 isIndex = getPath(currentURL,path);
 
