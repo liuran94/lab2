@@ -6,7 +6,7 @@
 #include <string.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16,elltotal=1024;
+int coocol=0,coototal=16,elltotal=24;
 int **ellcol,**ellvalue,**cooarray;
 
 void printEllCoo(){
@@ -61,15 +61,15 @@ void mallocEllCoo(){
 void reallocEll(int row){
     ellcol=(int**)realloc(ellcol,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
     for(int i=0;i<(row-elltotal+1);i++) {
-        ellcol[elltotal] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
-        memset(ellcol[elltotal], -1, ELL_LEN * sizeof(int));
+        ellcol[elltotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
+        memset(ellcol[elltotal+i], -1, ELL_LEN * sizeof(int));
         ellcol[i][ELL_LEN]=0;
     }
 
     ellvalue=(int**)realloc(ellvalue,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
     for(int i=0;i<(row-elltotal+1);i++) {
-        ellvalue[elltotal] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
-        memset(ellvalue[elltotal], -1, ELL_LEN * sizeof(int));
+        ellvalue[elltotal+i] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
+        memset(ellvalue[elltotal+i], -1, ELL_LEN * sizeof(int));
     }
     elltotal=row+1;
 }
