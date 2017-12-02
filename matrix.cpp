@@ -7,122 +7,130 @@
 #include <math.h>
 #include "matrix.h"
 
-int coocol=0,coototal=16,elltotal=1024;
-int **ellcol,**ellvalue,**cooarray;
+int cooCol=0,cooTotal=16,ellTotal=1024;
+int **ellCol,**ellValue,**cooArray;
 
-int **AEllCol,**ACooArray;
-double **AEllValue,*ACooValue;
-int ACooCol=0,ACooTotal=16,AEllTotal=1024;
+//a_cooIndex是记录coo矩阵的行号和列号的二维int型矩阵
+int **a_ellCol,**a_cooIndex;
+
+//a_cooValue是记录coo矩阵行列号指向的单元的值的一维double型数组
+double **a_ellValue,*a_cooValue;
+
+/*a_cooCol表示A矩阵的coo矩阵目前已记录的元素个数
+ * a_cooTotal表示A矩阵的coo矩阵目前的列数（目前可以记录的元素个数）
+ * a_ellTotal表示A矩阵的ell矩阵的总行数（总链接数）
+ */
+int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024;
 double *pageRank;
 
 void printEllCoo(){
     //测试打印部分数组
-    printf("ellcol:\n");
+    printf("ellCol:\n");
     for(int i=0;i<10;i++){
         for(int j=0;j<ELL_LEN+1;j++){
-            printf("%d ",ellcol[i][j]);
+            printf("%d ",ellCol[i][j]);
         }
         printf("\n");
     }
-//    printf("ellvalue:\n");
+//    printf("ellValue:\n");
 //    for(int i=0;i<10;i++){
 //        for(int j=0;j<10;j++){
-//            printf("%d ",ellvalue[i][j]);
+//            printf("%d ",ellValue[i][j]);
 //        }
 //        printf("\n");
 //    }
     printf("coo:\n");
     for(int i=0;i<3;i++){
         for(int j=0;j<10;j++){
-            printf("%d ",cooarray[i][j]);
+            printf("%d ",cooArray[i][j]);
         }
         printf("\n");
     }
-    printf("COO length:%d\n",coototal);
+    printf("COO length:%d\n",cooTotal);
 }
 void mallocEllCoo(){
     int i;
-    ellcol=(int**)malloc(elltotal*sizeof(int*)); //第一维
-    for(i=0;i<elltotal; i++)
+    ellCol=(int**)malloc(ellTotal*sizeof(int*)); //第一维
+    for(i=0;i<ellTotal; i++)
     {
-        ellcol[i]=(int*)malloc((ELL_LEN+1)* sizeof(int));//第二维
-        memset(ellcol[i],-1, ELL_LEN* sizeof(int));
-        ellcol[i][ELL_LEN]=0;
+        ellCol[i]=(int*)malloc((ELL_LEN+1)* sizeof(int));//第二维
+        memset(ellCol[i],-1, ELL_LEN* sizeof(int));
+        ellCol[i][ELL_LEN]=0;
     }
-    ellvalue=(int**)malloc(elltotal*sizeof(int*)); //第一维
-    for(i=0;i<elltotal; i++)
+    ellValue=(int**)malloc(ellTotal*sizeof(int*)); //第一维
+    for(i=0;i<ellTotal; i++)
     {
-        ellvalue[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
-        memset(ellvalue[i],-1, ELL_LEN* sizeof(int));
+        ellValue[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
+        memset(ellValue[i],-1, ELL_LEN* sizeof(int));
     }
-    cooarray=(int**)malloc(3*sizeof(int*)); //第一维
+    cooArray=(int**)malloc(3*sizeof(int*)); //第一维
     for(i=0;i<3; i++)
     {
-        cooarray[i]=(int*)malloc(coototal* sizeof(int));//第二维
-        memset(cooarray[i],-1,coototal* sizeof(int));
+        cooArray[i]=(int*)malloc(cooTotal* sizeof(int));//第二维
+        memset(cooArray[i],-1,cooTotal* sizeof(int));
     }
 
     return;
 }
 void reallocEll(int row){
-    ellcol=(int**)realloc(ellcol,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
-    for(int i=0;i<(row-elltotal+1);i++) {
-        ellcol[elltotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
-        memset(ellcol[elltotal+i], -1, ELL_LEN * sizeof(int));
-        ellcol[elltotal+i][ELL_LEN]=0;
+    ellCol=(int**)realloc(ellCol,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
+    for(int i=0;i<(row-ellTotal+1);i++) {
+        ellCol[ellTotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
+        memset(ellCol[ellTotal+i], -1, ELL_LEN * sizeof(int));
+        ellCol[ellTotal+i][ELL_LEN]=0;
     }
 
-    ellvalue=(int**)realloc(ellvalue,(elltotal+(row-elltotal+1))*sizeof(int*)); //第一维
-    for(int i=0;i<(row-elltotal+1);i++) {
-        ellvalue[elltotal+i] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
-        memset(ellvalue[elltotal+i], -1, ELL_LEN * sizeof(int));
+    ellValue=(int**)realloc(ellValue,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
+    for(int i=0;i<(row-ellTotal+1);i++) {
+        ellValue[ellTotal+i] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
+        memset(ellValue[ellTotal+i], -1, ELL_LEN * sizeof(int));
     }
-    elltotal=row+1;
+    ellTotal=row+1;
 }
 void addInEllCoo(int* arr,int n,int row){
     int i,j;
     printf("row:%d\n",row);
-    if(row>=elltotal) reallocEll(row);
+    if(row>=ellTotal) reallocEll(row);
     //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
-    //ellcol[row][0]=row;
+    //ellCol[row][0]=row;
 
-    //printf("Nellcol:%d\n",ellcol[row][ELL_LEN]);
-    if(ellcol[row][ELL_LEN]<ELL_LEN) {
+    //printf("Nellcol:%d\n",ellCol[row][ELL_LEN]);
+    if(ellCol[row][ELL_LEN]<ELL_LEN) {
         for (i = 0; i < n; i++) {
-            if (i+ellcol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
-                ellcol[row][i+ellcol[row][ELL_LEN]] = arr[i];
-                ellvalue[row][i+ellcol[row][ELL_LEN]] = 1;
+            if (i+ellCol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
+                ellCol[row][i+ellCol[row][ELL_LEN]] = arr[i];
+                ellValue[row][i+ellCol[row][ELL_LEN]] = 1;
             } else {//存入COO
-                if (coocol >= coototal) {//COO矩阵溢出
+                if (cooCol >= cooTotal) {//COO矩阵溢出
                     for (j = 0; j < 3; j++) {
-                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
+                        cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
                     }
-                    coototal *= 2;
-                    //printf("coototal:%d\n",coototal);
+                    cooTotal *= 2;
+                    //printf("cooTotal:%d\n",cooTotal);
                 }
-                cooarray[ROW][coocol] = row;
-                cooarray[COL][coocol] = arr[i];
-                cooarray[VALUE][coocol] = 1;
-                coocol++;
+                cooArray[ROW][cooCol] = row;
+                cooArray[COL][cooCol] = arr[i];
+                cooArray[VALUE][cooCol] = 1;
+                cooCol++;
             }
         }
     }
     else{
         for (i = 0; i < n; i++) {
-                if (coocol >= coototal) {//COO矩阵溢出
+                if (cooCol >= cooTotal) {//COO矩阵溢出
                     for (j = 0; j < 3; j++) {
-                        cooarray[j] = (int *) realloc(cooarray[j], 2 * coototal * sizeof(int));//COO长度翻倍
+                        cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
                     }
-                    coototal *= 2;
-                    //printf("coototal:%d\n",coototal);
+                    cooTotal *= 2;
+                    //printf("cooTotal:%d\n",cooTotal);
                 }
-                cooarray[ROW][coocol] = row;
-                cooarray[COL][coocol] = arr[i];
-                cooarray[VALUE][coocol] = 1;
-                coocol++;
+                cooArray[ROW][cooCol] = row;
+                cooArray[COL][cooCol] = arr[i];
+                cooArray[VALUE][cooCol] = 1;
+                cooCol++;
         }
     }
-    ellcol[row][ELL_LEN]=ellcol[row][ELL_LEN]+n;
+    ellCol[row][ELL_LEN]=ellCol[row][ELL_LEN]+n;
 }
 void quickSort(int* arr,int startPos, int endPos) {
     int i, j;
@@ -171,24 +179,93 @@ int duplicate(int* arr,int* temp,int startPos,int endPos){
 //根据行列号在稀疏矩阵G中找到对应的元素
 int getGValueByIndex(int row,int col){
     //取ell该行最后一个数字  表示该行总共的元素个数
-    int total=ellcol[row][ELL_LEN];
+    int total=ellCol[row][ELL_LEN];
     int i;
     for(i=0;i<total;i++){
         if(i<ELL_LEN){
-            if(ellcol[row][i]==col)
+            if(ellCol[row][i]==col)
                 return 1;
         }
         else{
-            for(i=0;i<coocol;i++){
-                if(cooarray[ROW][i]==row&&cooarray[COL][i]==col)
+            for(i=0;i<cooCol;i++){
+                if(cooArray[ROW][i]==row&&cooArray[COL][i]==col)
                     return 1;
             }
         }
     }
     return 0;
 }
-void setAValueByIndex(int row,int col,double value){
 
+//初始化A矩阵的ell和coo矩阵
+void a_mallocEllCoo(){
+    int i;
+    a_ellCol=(int**)malloc(a_ellTotal*sizeof(int*)); //第一维
+    for(i=0;i<a_ellTotal; i++)
+    {
+        a_ellCol[i]=(int*)malloc((ELL_LEN+1)* sizeof(int));//第二维
+        memset(a_ellCol[i],-1, ELL_LEN* sizeof(int));
+        a_ellCol[i][ELL_LEN]=0;
+    }
+    a_ellValue=(double **)malloc(a_ellTotal*sizeof(double *)); //第一维
+    for(i=0;i<a_ellTotal; i++)
+    {
+        a_ellValue[i]=(double*)malloc(ELL_LEN* sizeof(double));//第二维
+        memset(a_ellValue[i],-1, ELL_LEN* sizeof(int));
+    }
+    a_cooIndex=(int**)malloc(2*sizeof(int*)); //第一维
+    for(i=0;i<2; i++)
+    {
+        a_cooIndex[i]=(int*)malloc(a_cooTotal* sizeof(int));//第二维
+        memset(a_cooIndex[i],-1,a_cooTotal* sizeof(int));
+    }
+    a_cooValue=(double*)malloc(a_cooTotal* sizeof(double));
+}
+
+//给A矩阵的ell矩阵增加到row行
+void a_reallocEll(int row){
+    a_ellCol=(int**)realloc(a_ellCol,(a_ellTotal+(row-a_ellTotal+1))*sizeof(int*)); //第一维
+    for(int i=0;i<(row-a_ellTotal+1);i++) {
+        a_ellCol[a_ellTotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
+        memset(a_ellCol[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
+        a_ellCol[a_ellTotal+i][ELL_LEN]=0;
+    }
+
+    a_ellValue=(double **)realloc(a_ellValue,(a_ellTotal+(row-a_ellTotal+1))*sizeof(double *)); //第一维
+    for(int i=0;i<(row-a_ellTotal+1);i++) {
+        a_ellValue[a_ellTotal+i] = (double *) malloc(ELL_LEN * sizeof(double));//第二维
+        memset(a_ellValue[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
+    }
+    a_ellTotal=row+1;
+}
+
+void setAValueByIndex(int row,int col,double value){
+    int i;
+    printf("row:%d,col:%d\n",row,col);
+    if(row>=a_ellTotal) a_reallocEll(row);
+    //ell矩阵的最后一列表示该行在ell和coo中总的元素个数
+    //ELL还可存
+    if(a_ellCol[row][ELL_LEN]<ELL_LEN) {
+        a_ellCol[row][a_ellCol[row][ELL_LEN]] = col;
+        a_ellValue[row][a_ellCol[row][ELL_LEN]] = value;
+    }
+    //存入COO
+    else {
+        //COO矩阵溢出
+        if (a_cooCol >= a_cooTotal) {
+            //a_cooIndex长度翻倍
+            for (i = 0; i < 2; i++)
+                a_cooIndex[i] = (int *) realloc(a_cooIndex[i], 2 * a_cooTotal * sizeof(int));
+            //a_cooValue长度翻倍
+            a_cooValue=(double*)realloc(a_cooValue,2 * a_cooTotal * sizeof(double));
+            a_cooTotal *= 2;
+            //printf("cooTotal:%d\n",cooTotal);
+        }
+        a_cooIndex[ROW][a_cooCol] = row;
+        a_cooIndex[COL][a_cooCol] = col;
+        a_cooValue[a_cooCol] = value;
+        a_cooCol++;
+    }
+    a_ellCol[row][ELL_LEN]++;
 }
 
 //将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
@@ -197,17 +274,17 @@ void generateA(){
     int i,j,total;
     double value;
     //列优先遍历
-    for(i=0;i<elltotal;i++){
+    for(i=0;i<ellTotal;i++){
         total=0;
-        for (j = 0; j < elltotal; j++) {
+        for (j = 0; j < ellTotal; j++) {
             if(getGValueByIndex(j,i)==1)
                 total++;
         }
-        for (j = 0; j < elltotal; j++) {
+        for (j = 0; j < ellTotal; j++) {
             //计算GM矩阵该位置的值
             value=1/total;
             //计算A矩阵该位置的值
-            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/elltotal;
+            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/ellTotal;
             //写入A矩阵
             setAValueByIndex(j,i,value);
         }
@@ -216,7 +293,8 @@ void generateA(){
 
 //pageRank向量初始化长度等于总共的链接数且值为1的数组
 void initPageRank(){
-
+    pageRank=(double *)malloc(a_ellTotal* sizeof(double));
+    memset(pageRank,1, a_ellTotal* sizeof(double));
 }
 
 void generatePageRank(){
@@ -225,17 +303,17 @@ void generatePageRank(){
     double value;
     while (!successFlag){
         successFlag=true;
-        for(i=0;i<AEllTotal;i++){
+        for(i=0;i<a_ellTotal;i++){
             value=0;
-            //int num=AEllCol[i][ELL_LEN+1]-ELL_LEN;
+            //int num=a_ellCol[i][ELL_LEN+1]-ELL_LEN;
             for(j=0;j<ELL_LEN;j++){
-                col=AEllCol[i][j];
-                value+=pageRank[col]*AEllValue[i][j];
+                col=a_ellCol[i][j];
+                value+=pageRank[col]*a_ellValue[i][j];
             }
-            for(k=0;k<ACooCol;k++){
-                if(ACooArray[ROW][k]==i){
-                    col=ACooArray[COL][k];
-                    value+=pageRank[col]*ACooValue[k];
+            for(k=0;k<a_cooCol;k++){
+                if(a_cooIndex[ROW][k]==i){
+                    col=a_cooIndex[COL][k];
+                    value+=pageRank[col]*a_cooValue[k];
                 }
             }
             if(fabs(pageRank[i]-value)>LIMIT)
@@ -243,5 +321,4 @@ void generatePageRank(){
             pageRank[i]=value;
         }
     }
-
 }
