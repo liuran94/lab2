@@ -10,7 +10,7 @@
 
 #define ROW 0
 #define COL 1
-#define VALUE 2
+//#define VALUE 2
 //阻尼系数
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值

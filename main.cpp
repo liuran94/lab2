@@ -273,3 +273,23 @@ int main(int argc,char* argv[]){
 
     return 0;
 }
+
+/*
+int main(){
+    mallocEllCoo();
+    int arr0[3]={1,2};
+    addInEllCoo(arr0,2,0);
+
+    int arr1[3]={2};
+    addInEllCoo(arr1,1,1);
+
+    int arr3[3]={0};
+    addInEllCoo(arr3,1,2);
+
+    printEllCoo();
+    a_mallocEllCoo();
+    generateA();
+    initPageRank();
+    generatePageRank();
+    printPageRank();
+}*/
