@@ -28,5 +28,6 @@ void a_reallocEll(int row);
 void generateA();
 void initPageRank();
 void generatePageRank();
+void printPageRank();
 
 #endif //LAB2_MATRIX_H
