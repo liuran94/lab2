@@ -7,7 +7,7 @@
 #include <math.h>
 #include "matrix.h"
 
-int cooCol=0,cooTotal=16,ellTotal=1024;
+int cooCol=0,cooTotal=16,ellTotal=1024,colTotal=0;
 int **ellCol,**ellValue,**cooArray;
 
 //a_cooIndex是记录coo矩阵的行号和列号的二维int型矩阵
@@ -20,7 +20,7 @@ double **a_ellValue,*a_cooValue;
  * a_cooTotal表示A矩阵的coo矩阵目前的列数（目前可以记录的元素个数）
  * a_ellTotal表示A矩阵的ell矩阵的总行数（总链接数）
  */
-int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024;
+int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024,a_colTotal=0;
 double *pageRank;
 
 void printEllCoo(){
@@ -88,8 +88,9 @@ void reallocEll(int row){
     ellTotal=row+1;
 }
 void addInEllCoo(int* arr,int n,int row){
+    if(row+1>colTotal) colTotal=row+1;
     int i,j;
-    printf("row:%d\n",row);
+//    printf("row:%d\n",row);
     if(row>=ellTotal) reallocEll(row);
     //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
     //ellCol[row][0]=row;
@@ -271,20 +272,21 @@ void setAValueByIndex(int row,int col,double value){
 //将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
 //根据修正公式得到A矩阵的值
 void generateA(){
+    a_colTotal=colTotal;
     int i,j,total;
     double value;
     //列优先遍历
-    for(i=0;i<ellTotal;i++){
+    for(i=0;i<colTotal;i++){
         total=0;
-        for (j = 0; j < ellTotal; j++) {
+        for (j = 0; j < colTotal; j++) {
             if(getGValueByIndex(j,i)==1)
                 total++;
         }
-        for (j = 0; j < ellTotal; j++) {
-            //计算GM矩阵该位置的值
-            value=1/total;
-            //计算A矩阵该位置的值
-            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/ellTotal;
+        //计算GM矩阵该位置的值
+        value=1/(double)total;
+        //计算A矩阵该位置的值
+        value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)colTotal;
+        for (j = 0; j < colTotal; j++) {
             //写入A矩阵
             setAValueByIndex(j,i,value);
         }
@@ -293,8 +295,8 @@ void generateA(){
 
 //pageRank向量初始化长度等于总共的链接数且值为1的数组
 void initPageRank(){
-    pageRank=(double *)malloc(a_ellTotal* sizeof(double));
-    memset(pageRank,1, a_ellTotal* sizeof(double));
+    pageRank=(double *)malloc(a_colTotal* sizeof(double));
+    memset(pageRank,1, a_colTotal* sizeof(double));
 }
 
 void generatePageRank(){
@@ -303,7 +305,7 @@ void generatePageRank(){
     double value;
     while (!successFlag){
         successFlag=true;
-        for(i=0;i<a_ellTotal;i++){
+        for(i=0;i<a_colTotal;i++){
             value=0;
             //int num=a_ellCol[i][ELL_LEN+1]-ELL_LEN;
             for(j=0;j<ELL_LEN;j++){
@@ -321,4 +323,9 @@ void generatePageRank(){
             pageRank[i]=value;
         }
     }
+}
+
+void printPageRank(){
+    for(int i=0;i<a_colTotal;i++)
+        printf("%f\n",pageRank[i]);
 }

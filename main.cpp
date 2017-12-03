@@ -111,14 +111,15 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
     searchURL(PageBuf,url,out,tree,q,&urlId);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
-    printf("endpattern:%s\n",endPattern);
+//    printf("endpattern:%s\n",endPattern);
 
     free(PageBuf);
-    printf("URL:%s\n",url);
-    printf("Queue length: %d\n",q->size);
+//    printf("URL:%s\n",url);
+//    printf("Queue length: %d\n",q->size);
 
     if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0
-       ||strcmp(endPattern,"script>")==0||strcmp(endPattern,"nclude>")==0){
+       ||strcmp(endPattern,"script>")==0||strcmp(endPattern,"SCRIPT>")==0
+       ||strcmp(endPattern,"nclude>")==0||strcmp(endPattern,"NCLUDE>")==0){
         free(endPattern);
         return 0;
     }
@@ -178,12 +179,15 @@ int main(int argc,char* argv[]){
     }
     while(true)
     {
+        printf("queueNum %d\n",q.size);
         if(outflag==1&&q.size>0){//队列开始增加
             outflag=2;//等待队列收敛
         }
         if(outflag==2&&q.size==0){//队列收敛结束
             break;//跳出主循环
         }
+        if(q.size>=10)
+            break;
         while(connectNum<q.size&&connectNum<MAX_CONNECT_NUM){
 
                 socket_client = socket(AF_INET,SOCK_STREAM,0);
@@ -212,7 +216,7 @@ int main(int argc,char* argv[]){
                 state=revResponse(arg->sock_c, ContentLength, &num, out,arg->url,tree,&q);
                 if(state==0){//全部接收完成
                     close(arg->sock_c);
-                    printf("close:%d\n",arg->sock_c);
+//                    printf("close:%d\n",arg->sock_c);
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
@@ -258,6 +262,12 @@ int main(int argc,char* argv[]){
         }
 
     }
+    printEllCoo();
+    a_mallocEllCoo();
+    generateA();
+    initPageRank();
+    generatePageRank();
+    printPageRank();
     close(epfd);
     fclose(out);
 
