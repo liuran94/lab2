@@ -6,7 +6,7 @@
 #define LAB2_MATRIX_H
 #include "ac.h"
 #define MAXSIZE 1024
-#define ELL_LEN 50
+#define ELL_LEN 200
 
 #define ROW 0
 #define COL 1

@@ -154,9 +154,9 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int
                         sprintf(writeUrl,"%s %d\n",searchedurl,urlid);
                         fputs(writeUrl,out);
                     }
-                    if(ac_search_string(tree,searchedurl,strlen(searchedurl))){
+                    /*if(ac_search_string(tree,searchedurl,strlen(searchedurl))){
 
-                    }
+                    }*/
                     abuffer[abindex]=urlid;
                     abindex++;
 
