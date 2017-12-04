@@ -29,5 +29,6 @@ void generateA();
 void initPageRank();
 void generatePageRank();
 void printPageRank();
+void quickSortForDouble(double* arr,int startPos, int endPos);
 
 #endif //LAB2_MATRIX_H
