@@ -6,7 +6,7 @@
 #define LAB2_MATRIX_H
 #include "ac.h"
 #define MAXSIZE 1024
-#define ELL_LEN 50
+#define ELL_LEN 200
 
 #define ROW 0
 #define COL 1
@@ -14,7 +14,7 @@
 //阻尼系数
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值
-#define LIMIT 0.1
+#define LIMIT 0.01
 
 void printEllCoo();
 void mallocEllCoo();

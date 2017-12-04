@@ -67,7 +67,7 @@ void sendRequest(int isIndex,int *socket_client){
     strcat(request, "Connection:Keep-Alive\r\n\r\n");//keep-alive
     //printf("%s%s\n",host,path);
 
-    send(*socket_client,request,strlen(request),0);
+    send(*socket_client,request,strlen(request),MSG_NOSIGNAL);
     return;
 }
 int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree,Queue* q){
