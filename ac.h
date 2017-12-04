@@ -14,6 +14,7 @@ typedef struct {
 
 AC_STRUCT *ac_alloc(void);
 int ac_add_string(AC_STRUCT *node, char *P, int M, int *id,bool* firstflag);
+int ac_search_string(AC_STRUCT *node, char *P, int M);
 void ac_free(AC_STRUCT *node);
 
 #endif

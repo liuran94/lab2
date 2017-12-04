@@ -14,7 +14,7 @@
 //阻尼系数
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值
-#define LIMIT 0.0001
+#define LIMIT 0.1
 
 void printEllCoo();
 void mallocEllCoo();

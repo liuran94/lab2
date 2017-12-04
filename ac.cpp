@@ -115,3 +115,32 @@ void ac_free(AC_STRUCT *node)
 
     free(node);
 }
+
+
+int ac_search_string(AC_STRUCT *node, char *P, int M)
+{
+    int i;
+    AC_TREE tnode, child;
+
+    P--;
+    tnode = node->tree;
+    for (i=1; i <= M; i++) {
+        child = tnode->children;
+        while (child != NULL && child->ch < P[i]) {//匹配一个字节
+            child = child->sibling;
+        }
+        if (child == NULL || child->ch != P[i])//不匹配
+            break;
+        tnode = child;//匹配下一个字
+    }
+    if(i>M){
+        if(tnode->matchid==-1){
+            return -1;
+        }
+        else{
+            return tnode->matchid;
+        }
+    }
+    else
+        return -1;
+}

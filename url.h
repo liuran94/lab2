@@ -7,6 +7,10 @@
 //using namespace std;
 #define MAX_PATH_LENGTH 1024
 
+typedef struct urlWithFatherId {
+    int fatherId;
+    char url[MAX_PATH_LENGTH];
+} urlWithFather;
 int getPath(char currenturl[],char* path);
 int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int* id);
 //int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,queue<char*> q,int* id);
