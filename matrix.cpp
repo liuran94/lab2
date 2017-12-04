@@ -97,6 +97,17 @@ void reallocEll(int row){
     ellTotal=row+1;
 }
 
+void freeEllCoo(){
+    for(int i=0;i<ellTotal;i++){
+        free(ellCol[i]);
+    }
+    free(ellCol);
+    for(int i=0;i<3;i++){
+        free(cooArray[i]);
+    }
+    free(cooArray);
+}
+
 void addInEllCoo(int* arr,int n,int row){
     if(row+1>colTotal) colTotal=row+1;
     int i,j;
@@ -252,7 +263,7 @@ void a_reallocEll(int row){
 
 void setAValueByIndex(int row,int col,double value){
     int i;
-    printf("row:%d,col:%d\n",row,col);
+    //printf("row:%d,col:%d\n",row,col);
     if(row>=a_ellTotal) a_reallocEll(row);
     //ell矩阵的最后一列表示该行在ell和coo中总的元素个数
     //ELL还可存
@@ -298,7 +309,7 @@ void generateA(){
         //计算A矩阵该位置的值
         value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)colTotal;
         double value1=CAMPING_COEFFICIENT/(double)colTotal;
-        printf("value1 %lf\n",value1);
+        //printf("value1 %lf\n",value1);
         for (j = 0; j < colTotal; j++) {
             //写入A矩阵
             if(getGValueByIndex(i,j)==0)
@@ -307,7 +318,8 @@ void generateA(){
                 setAValueByIndex(j,i,value);
         }
     }
-    printAEllCoo();
+    freeEllCoo();
+    //printAEllCoo();
 }
 
 //pageRank向量初始化长度等于总共的链接数且值为1的数组
@@ -318,7 +330,7 @@ void initPageRank(){
         pageRank[i]=1;
         pageRankTemp[i]=1;
     }
-    printPageRank();
+    //printPageRank();
 }
 
 void generatePageRank(){
@@ -347,31 +359,38 @@ void generatePageRank(){
         }
         for(i=0;i<a_colTotal;i++)
             pageRank[i]=pageRankTemp[i];
-        printPageRank();
+        //printPageRank();
     }
 }
 
+int getMaxFromPageRank(double lastMax) {
+    int maxIndex=0;
+    for(int i=1;i<a_colTotal;i++){
+        if(pageRank[i]>pageRank[maxIndex]&&pageRank[i]<lastMax)
+            maxIndex=i;
+    }
+    return maxIndex;
+}
 void printPageRank(){
-    quickSortForDouble(pageRank,0,a_colTotal-1);
     printf("pageRank:\n");
-    for(int i=0;i<a_colTotal;i++)
-        printf("%f\n",pageRank[i]);
+    int maxIndex;
+    int lastMax=99999;
+    FILE *out;
+    char buffer[1024];
+    if((out = fopen("./result.txt", "r")) == NULL){
+        exit(1);
+    }
+    for(int i=0;i<10;i++){
+        maxIndex=getMaxFromPageRank(lastMax);
+        printf("***%d***  %f ",i+1,pageRank[maxIndex]);
+        fseek(out, 0, SEEK_SET);
+        for(int j=0;j<maxIndex;j++){
+            memset(buffer,0,1024);
+            fgets(buffer,1024,out);
+        }
+        printf("%s\n",buffer);
+        lastMax=pageRank[maxIndex];
+    }
+    fclose(out);
 }
 
-void quickSortForDouble(double* arr,int startPos, int endPos) {
-    int i, j;
-    double key;
-    key = arr[startPos];
-    i = startPos;
-    j = endPos;
-    while (i<j)
-    {
-        while (arr[j] >= key && i<j)--j; //————1 从后往去前扫，直到找到一个a[j]<key或遍历完
-        arr[i] = arr[j];
-        while (arr[i] <= key && i<j)++i; //————2 从后往去前扫，直到找到一个a[i]>key或遍历完
-        arr[j] = arr[i];
-    }
-    arr[i] = key;
-    if (i - 1>startPos) quickSortForDouble(arr, startPos, i - 1); //————1 如果key前还有两个及以上的数，排key前的数（有一个的话自然就不用排了）
-    if (endPos>i + 1) quickSortForDouble(arr, i + 1, endPos);//————2 如果key后还有两个及以上的数，排key后的数
-}

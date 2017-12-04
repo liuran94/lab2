@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/epoll.h>
 #include "url.h"
 #include "matrix.h"
@@ -184,12 +185,14 @@ int main(int argc,char* argv[]){
         if(n==0&&q.size==0&&connectNum!=0&&!timingflag){
             timingflag=true;
             timing=clock();
-        } else{
+        }
+        else if((n!=0||q.size!=0)&&timingflag){
             timingflag=false;
             timing=0;
         }
         if(timingflag){
             if(clock()-timing>10000){
+                printf("Main loop:timeout.\n");
                 outflag=4;
             }
         }
@@ -288,17 +291,16 @@ int main(int argc,char* argv[]){
         }
 
     }
+    close(epfd);
+    fclose(out);
     printf("\n*****total:%d\n",urlId);
     ac_free(tree);
 //    printEllCoo();
-//    a_mallocEllCoo();
-//    generateA();
-//    initPageRank();
-//    generatePageRank();
-//    printPageRank();
-    close(epfd);
-    fclose(out);
-
+    a_mallocEllCoo();
+    generateA();
+    initPageRank();
+    generatePageRank();
+    printPageRank();
     return 0;
 }
 
