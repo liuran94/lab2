@@ -259,9 +259,14 @@ void a_reallocEll(int row){
 }
 
 void setAValueByIndex(int row,int col,double value){
+    if(row<0||row>colTotal){//
+        printf("error in set value of A :row:%d,col:%d\n",row,col);
+        return;
+    }
     int i;
     //printf("row:%d,col:%d\n",row,col);
     if(row>=a_ellTotal) a_reallocEll(row);
+
     //ell矩阵的最后一列表示该行在ell和coo中总的元素个数
     //ELL还可存
     if(a_ellCol[row][ELL_LEN]<ELL_LEN) {
@@ -291,14 +296,14 @@ void getOutLinkIndex(int row){
     memset(outLinkIndex, -1, 500000 * sizeof(int));
     //取ell该行最后一个数字  表示该行总共的元素个数
     int total=ellCol[row][ELL_LEN];
-    int i,j;
+    int i;
     int index=0;
     for(i=0;i<total;i++){
         if(i<ELL_LEN&&ellCol[row][i]!=-1){
             outLinkIndex[index]=ellCol[row][i];
             index++;
         }
-        else if(cooArray[ROW][i-ELL_LEN]==row){
+        else if(cooArray[ROW][i-ELL_LEN]==row&&cooArray[COL][i-ELL_LEN]!=-1){
             outLinkIndex[index]=cooArray[COL][i-ELL_LEN];
             index++;
         }
@@ -313,13 +318,13 @@ void generateA(){
     //行优先遍历G
     for(i=0;i<colTotal;i++){
         //if(i==10000||i==20000||i==30000||i==40000||i==50000||i==60000||i==70000||i==80000||i==90000||i==100000)
-        printf("get i = %d\n",i);
-        total=0;
+            //printf("get i = %d\n",i);
+        //total=0;
         /*for (j = 0; j < colTotal; j++) {
             if(getGValueByIndex(i,j)==1)
                 total++;
         }*/
-        total=a_ellCol[i][ELL_LEN];
+        total=ellCol[i][ELL_LEN];
         //计算GM矩阵该位置的值
         if(total==0)
             value=-1;
@@ -331,9 +336,9 @@ void generateA(){
             //printf("value1 %lf\n",value1);
         }
         getOutLinkIndex(i);
-        for(j=0;j<colTotal;j++){
+        /*for(j=0;j<colTotal;j++){
             setAValueByIndex(j,i,CAMPING_COEFFICIENT/(double)colTotal);
-        }
+        }*/
         for(j=0;j<total;j++){
             setAValueByIndex(outLinkIndex[j],i,value);
         }
@@ -366,24 +371,34 @@ void initPageRank(){
 }
 
 void generatePageRank(){
+    printPageRank();
     int i,j,k,col;
     bool successFlag= false;
     double value;
+    int *flag=(int *)malloc(a_colTotal* sizeof(int));
     while (!successFlag){
         successFlag=true;
         for(i=0;i<a_colTotal;i++){
+            memset(flag,0, a_colTotal* sizeof(int));
             value=0;
             //int num=a_ellCol[i][ELL_LEN+1]-ELL_LEN;
             for(j=0;j<ELL_LEN;j++){
                 col=a_ellCol[i][j];
-                if(col!=-1)
+                if(col!=-1){
                     value+=(pageRank[col]*a_ellValue[i][j]);
+                    flag[col]=1;
+                }
             }
-            for(k=0;k<a_cooCol;k++){
+            for(k=0;k<a_colTotal;k++){
                 if(a_cooIndex[ROW][k]==i){
                     col=a_cooIndex[COL][k];
                     value+=(pageRank[col]*a_cooValue[k]);
+                    flag[col]=1;
                 }
+            }
+            for(k=0;k<a_colTotal;k++){
+                if(flag[k]==0)
+                    value+=(pageRank[k]*(CAMPING_COEFFICIENT/(double)colTotal));
             }
             if(fabs(pageRank[i]-value)>LIMIT)
                 successFlag= false;
