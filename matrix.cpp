@@ -77,14 +77,13 @@ void mallocEllCoo(){
         memset(ellCol[i],-1, ELL_LEN* sizeof(int));
         ellCol[i][ELL_LEN]=0;
     }
-    cooArray=(int**)malloc(3*sizeof(int*)); //第一维
-    for(i=0;i<3; i++)
+    cooArray=(int**)malloc(2*sizeof(int*)); //第一维
+    for(i=0;i<2; i++)
     {
         cooArray[i]=(int*)malloc(cooTotal* sizeof(int));//第二维
         memset(cooArray[i],-1,cooTotal* sizeof(int));
     }
 
-    return;
 }
 
 void reallocEll(int row){
@@ -123,7 +122,7 @@ void addInEllCoo(int* arr,int n,int row){
                 ellCol[row][i+ellCol[row][ELL_LEN]] = arr[i];
             } else {//存入COO
                 if (cooCol >= cooTotal) {//COO矩阵溢出
-                    for (j = 0; j < 3; j++) {
+                    for (j = 0; j < 2; j++) {
                         cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
                     }
                     cooTotal *= 2;
@@ -139,7 +138,7 @@ void addInEllCoo(int* arr,int n,int row){
     else{
         for (i = 0; i < n; i++) {
                 if (cooCol >= cooTotal) {//COO矩阵溢出
-                    for (j = 0; j < 3; j++) {
+                    for (j = 0; j < 2; j++) {
                         cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
                     }
                     cooTotal *= 2;
@@ -203,15 +202,15 @@ int duplicate(int* arr,int* temp,int startPos,int endPos){
 int getGValueByIndex(int row,int col){
     //取ell该行最后一个数字  表示该行总共的元素个数
     int total=ellCol[row][ELL_LEN];
-    int i;
+    int i,j;
     for(i=0;i<total;i++){
         if(i<ELL_LEN){
             if(ellCol[row][i]==col)
                 return 1;
         }
         else{
-            for(i=0;i<cooCol;i++){
-                if(cooArray[ROW][i]==row&&cooArray[COL][i]==col)
+            for(j=0;j<cooCol;j++){
+                if(cooArray[ROW][j]==row&&cooArray[COL][j]==col)
                     return 1;
             }
         }
@@ -233,7 +232,7 @@ void a_mallocEllCoo(){
     for(i=0;i<a_ellTotal; i++)
     {
         a_ellValue[i]=(double*)malloc(ELL_LEN* sizeof(double));//第二维
-        memset(a_ellValue[i],-1, ELL_LEN* sizeof(int));
+        //memset(a_ellValue[i],-1, ELL_LEN* sizeof(int));
     }
     a_cooIndex=(int**)malloc(2*sizeof(int*)); //第一维
     for(i=0;i<2; i++)
@@ -256,7 +255,7 @@ void a_reallocEll(int row){
     a_ellValue=(double **)realloc(a_ellValue,(a_ellTotal+(row-a_ellTotal+1))*sizeof(double *)); //第一维
     for(int i=0;i<(row-a_ellTotal+1);i++) {
         a_ellValue[a_ellTotal+i] = (double *) malloc(ELL_LEN * sizeof(double));//第二维
-        memset(a_ellValue[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
+        //memset(a_ellValue[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
     }
     a_ellTotal=row+1;
 }
@@ -297,7 +296,7 @@ void generateA(){
     a_colTotal=colTotal;
     int i,j,total;
     double value;
-    //行优先遍历
+    //行优先遍历G
     for(i=0;i<colTotal;i++){
         total=0;
         for (j = 0; j < colTotal; j++) {
@@ -308,7 +307,7 @@ void generateA(){
         value=1/(double)total;
         //计算A矩阵该位置的值
         value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)colTotal;
-        double value1=CAMPING_COEFFICIENT/(double)colTotal;
+        //double value1=CAMPING_COEFFICIENT/(double)colTotal;
         //printf("value1 %lf\n",value1);
         for (j = 0; j < colTotal; j++) {
             //写入A矩阵
@@ -350,7 +349,7 @@ void generatePageRank(){
             for(k=0;k<a_cooCol;k++){
                 if(a_cooIndex[ROW][k]==i){
                     col=a_cooIndex[COL][k];
-                    value+=pageRank[col]*a_cooValue[k];
+                    value+=(pageRank[col]*a_cooValue[k]);
                 }
             }
             if(fabs(pageRank[i]-value)>LIMIT)
@@ -374,7 +373,7 @@ int getMaxFromPageRank(double lastMax) {
 void printPageRank(){
     printf("pageRank:\n");
     int maxIndex;
-    int lastMax=99999;
+    double lastMax=99999;
     FILE *out;
     char buffer[1024];
     if((out = fopen("./result.txt", "r")) == NULL){

@@ -149,9 +149,13 @@ int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int
 
                     flag=false;
                     urlid=ac_add_string(tree,searchedurl,strlen(searchedurl),id,&flag);
+                    //未分配编号
                     if(flag){
                         sprintf(writeUrl,"%s %d\n",searchedurl,urlid);
                         fputs(writeUrl,out);
+                    }
+                    if(ac_search_string(tree,searchedurl,strlen(searchedurl))){
+
                     }
                     abuffer[abindex]=urlid;
                     abindex++;
