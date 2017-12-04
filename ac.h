@@ -10,8 +10,6 @@ typedef struct actreenode {
 
 typedef struct {
     AC_TREE tree;
-    char *T;
-    int N, c;
 } AC_STRUCT;
 
 AC_STRUCT *ac_alloc(void);

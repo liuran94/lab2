@@ -14,7 +14,7 @@
 
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
-#define MAX_CONNECT_NUM 20
+#define MAX_CONNECT_NUM 60
 
 using namespace std;
 
@@ -166,27 +166,42 @@ int main(int argc,char* argv[]){
 
     int firstid;
     bool firstflag= false;
+    bool timingflag=false;
+    int timing=0;
     firstid=ac_add_string(tree,currentURL, strlen(currentURL), &urlId,&firstflag);
     sprintf(request,"%s %d\n",currentURL,firstid);
     fputs(request,out);
 
     chdir("./download");
-    int n,state;
+    int j,n,state;
     int connectNum=0;
     epfd = epoll_create(MAX_CONNECT_NUM);	//生成用于处理accept的epoll专用文件描述符，最多监听256个事件
     for(int i=0;i<MAX_CONNECT_NUM;i++) {
         events[i].data.fd=-1;
     }
-    while(true)
+    while(outflag!=4)
     {
+        if(n==0&&q.size==0&&connectNum!=0&&!timingflag){
+            timingflag=true;
+            timing=clock();
+        } else{
+            timingflag=false;
+            timing=0;
+        }
+        if(timingflag){
+            if(clock()-timing>10000){
+                outflag=4;
+            }
+        }
         printf("queueNum %d\n",q.size);
         if(outflag==1&&q.size>0){//队列开始增加
             outflag=2;//等待队列收敛
         }
-        if(outflag==2&&q.size==0){//队列收敛结束
-            break;//跳出主循环
+        else if(outflag==2&&q.size==0){//队列收敛结束
+            outflag=3;//等待最后的接收完毕
         }
-        while(connectNum<q.size&&connectNum<MAX_CONNECT_NUM){
+        j=0;
+        while(j<q.size&&connectNum<MAX_CONNECT_NUM){
 
                 socket_client = socket(AF_INET,SOCK_STREAM,0);
                 connect(socket_client,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
@@ -199,10 +214,10 @@ int main(int argc,char* argv[]){
                 arg->sock_c=socket_client;
                 ev.data.ptr = arg;//
 
-                ev.events = EPOLLOUT;    //设置要处理的事件类型。可读，边缘触发
+                ev.events = EPOLLOUT|EPOLLET;    //设置要处理的事件类型。可读，边缘触发
                 epoll_ctl(epfd, EPOLL_CTL_ADD, socket_client, &ev);    //注册ev
                 connectNum++;
-
+                j++;
         }
         n = epoll_wait(epfd,events,MAX_CONNECT_NUM,200);
         printf("wait:%d,%d\n",n,connectNum);
@@ -218,10 +233,13 @@ int main(int argc,char* argv[]){
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+                    if(outflag==3&&connectNum==0){//最后的接收完毕
+                        outflag=4;
+                    }
                 }
                 else if(state==1){//部分接收完成
                     ev.data.ptr = arg;
-                    ev.events=EPOLLIN;//下一次继续接收
+                    ev.events=EPOLLIN|EPOLLET;//下一次继续接收
                     epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);//修改标识符，等待下一个循环时发送数据，异步处理的精髓
                 }
                 else{//错误
@@ -254,18 +272,30 @@ int main(int argc,char* argv[]){
 
                 ev.data.ptr = arg;
                 //printf("2sk:%d\n",arg->sock_c);
-                ev.events = EPOLLIN ;    //设置要处理的事件类型。可读，边缘触发
+                ev.events = EPOLLIN|EPOLLET ;    //设置要处理的事件类型。可读，边缘触发
                 epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev); //修改标识符，等待下一个循环时接收数据
+            }
+            else{
+                Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
+                close(arg->sock_c);
+                connectNum--;
+                ev.data.ptr = arg;
+                epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+                if(outflag==3&&connectNum==0){//最后的接收完毕
+                    outflag=4;
+                }
             }
         }
 
     }
-    printEllCoo();
-    a_mallocEllCoo();
-    generateA();
-    initPageRank();
-    generatePageRank();
-    printPageRank();
+    printf("\n*****total:%d\n",urlId);
+    ac_free(tree);
+//    printEllCoo();
+//    a_mallocEllCoo();
+//    generateA();
+//    initPageRank();
+//    generatePageRank();
+//    printPageRank();
     close(epfd);
     fclose(out);
 

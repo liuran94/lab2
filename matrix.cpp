@@ -8,7 +8,7 @@
 #include "matrix.h"
 
 int cooCol=0,cooTotal=16,ellTotal=1024,colTotal=0;
-int **ellCol,**ellValue,**cooArray;
+int **ellCol,**cooArray;
 
 //a_cooIndex是记录coo矩阵的行号和列号的二维int型矩阵
 int **a_ellCol,**a_cooIndex;
@@ -77,14 +77,8 @@ void mallocEllCoo(){
         memset(ellCol[i],-1, ELL_LEN* sizeof(int));
         ellCol[i][ELL_LEN]=0;
     }
-    ellValue=(int**)malloc(ellTotal*sizeof(int*)); //第一维
-    for(i=0;i<ellTotal; i++)
-    {
-        ellValue[i]=(int*)malloc(ELL_LEN* sizeof(int));//第二维
-        memset(ellValue[i],-1, ELL_LEN* sizeof(int));
-    }
-    cooArray=(int**)malloc(2*sizeof(int*)); //第一维
-    for(i=0;i<2; i++)
+    cooArray=(int**)malloc(3*sizeof(int*)); //第一维
+    for(i=0;i<3; i++)
     {
         cooArray[i]=(int*)malloc(cooTotal* sizeof(int));//第二维
         memset(cooArray[i],-1,cooTotal* sizeof(int));
@@ -99,12 +93,6 @@ void reallocEll(int row){
         ellCol[ellTotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
         memset(ellCol[ellTotal+i], -1, ELL_LEN * sizeof(int));
         ellCol[ellTotal+i][ELL_LEN]=0;
-    }
-
-    ellValue=(int**)realloc(ellValue,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
-    for(int i=0;i<(row-ellTotal+1);i++) {
-        ellValue[ellTotal+i] = (int *) malloc(ELL_LEN * sizeof(int));//第二维
-        memset(ellValue[ellTotal+i], -1, ELL_LEN * sizeof(int));
     }
     ellTotal=row+1;
 }
@@ -122,7 +110,6 @@ void addInEllCoo(int* arr,int n,int row){
         for (i = 0; i < n; i++) {
             if (i+ellCol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
                 ellCol[row][i+ellCol[row][ELL_LEN]] = arr[i];
-                ellValue[row][i+ellCol[row][ELL_LEN]] = 1;
             } else {//存入COO
                 if (cooCol >= cooTotal) {//COO矩阵溢出
                     for (j = 0; j < 3; j++) {
