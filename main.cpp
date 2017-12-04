@@ -186,8 +186,6 @@ int main(int argc,char* argv[]){
         if(outflag==2&&q.size==0){//队列收敛结束
             break;//跳出主循环
         }
-        if(q.size>=10)
-            break;
         while(connectNum<q.size&&connectNum<MAX_CONNECT_NUM){
 
                 socket_client = socket(AF_INET,SOCK_STREAM,0);
