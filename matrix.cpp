@@ -344,14 +344,8 @@ void generateA(){
     double value;
     //行优先遍历G
     for(i=0;i<colTotal;i++){
-        //if(i==10000||i==20000||i==30000||i==40000||i==50000||i==60000||i==70000||i==80000||i==90000||i==100000)
-            //printf("get i = %d\n",i);
-        //total=0;
-        /*for (j = 0; j < colTotal; j++) {
-            if(getGValueByIndex(i,j)==1)
-                total++;
-        }*/
-        total=ellCol[i][ELL_LEN];
+        getOutLinkIndex(i);
+        total=duplicate(outLinkIndex,outLinkIndexTemp);
         //计算GM矩阵该位置的值
         if(total==0)
             value=-1;
@@ -359,29 +353,10 @@ void generateA(){
             value=1/(double)total;
             //计算A矩阵该位置的值
             value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)colTotal;
-            //double value1=CAMPING_COEFFICIENT/(double)colTotal;
-            //printf("value1 %lf\n",value1);
         }
-        getOutLinkIndex(i);
-        duplicate(outLinkIndex,outLinkIndexTemp);
-        /*for(j=0;j<colTotal;j++){
-            setAValueByIndex(j,i,CAMPING_COEFFICIENT/(double)colTotal);
-        }*/
         for(j=0;j<total;j++){
             setAValueByIndex(outLinkIndexTemp[j],i,value);
         }
-        /*for (j = 0; j < colTotal; j++) {
-            //写入A矩阵
-            if(value==-1)
-                setAValueByIndex(j,i,value);
-            else{
-                if(getGValueByIndex(i,j)==0)
-                    setAValueByIndex(j,i,CAMPING_COEFFICIENT/(double)colTotal);
-                else
-                    setAValueByIndex(j,i,value);
-            }
-
-        }*/
     }
     freeEllCoo();
     //printAEllCoo();
@@ -401,6 +376,7 @@ void initPageRank(){
 void generatePageRank(){
     printPageRank();
     int i,j,k,col;
+    int num=0;
     bool successFlag= false;
     double value;
     int *flag=(int *)malloc(a_colTotal* sizeof(int));
@@ -435,7 +411,9 @@ void generatePageRank(){
         for(i=0;i<a_colTotal;i++)
             pageRank[i]=pageRankTemp[i];
         //printPageRank();
+        num++;
     }
+    printf("pageRank num:%d\n",num);
 }
 
 int getMaxFromPageRank(double lastMax) {
