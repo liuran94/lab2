@@ -10,7 +10,7 @@
 int outLinkIndex[500000];
 int outLinkIndexTemp[500000];
 
-int cooCol=0,cooTotal=16,ellTotal=0,colTotal=0;
+int cooCol=0,cooTotal=16,ellTotal=0;
 int **ellCol,**cooArray;
 
 //a_cooIndex是记录coo矩阵的行号和列号的二维int型矩阵
@@ -23,7 +23,7 @@ double **a_ellValue,*a_cooValue;
  * a_cooTotal表示A矩阵的coo矩阵目前的列数（目前可以记录的元素个数）
  * a_ellTotal表示A矩阵的ell矩阵的总行数（总链接数）
  */
-int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024,a_colTotal=0;
+int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024;
 double *pageRank;
 double *pageRankTemp;
 
@@ -155,7 +155,7 @@ void freeEllCoo(){
 }
 
 void addInEllCoo(int col,int row){
-    if(row+1>colTotal) colTotal=row+1;
+    //if(row+1>colTotal) colTotal=row+1;
     int i,j;
 //    printf("row:%d\n",row);
 //    if(row>=ellTotal) reallocEll(row);
@@ -246,6 +246,7 @@ int getGValueByIndex(int row,int col){
 //初始化A矩阵的ell和coo矩阵
 void a_mallocEllCoo(){
     int i;
+    a_ellTotal=ellTotal;
     a_ellCol=(int**)malloc(a_ellTotal*sizeof(int*)); //第一维
     for(i=0;i<a_ellTotal; i++)
     {
@@ -286,13 +287,13 @@ void a_reallocEll(int row){
 }
 
 void setAValueByIndex(int row,int col,double value){
-    if(row<0||row>colTotal){//
+    if(row<0||row>a_ellTotal){//
         printf("error in set value of A :row:%d,col:%d\n",row,col);
         return;
     }
     int i;
     //printf("row:%d,col:%d\n",row,col);
-    if(row>=a_ellTotal) a_reallocEll(row);
+    //if(row>=a_ellTotal) a_reallocEll(row);
 
     //ell矩阵的最后一列表示该行在ell和coo中总的元素个数
     //ELL还可存
@@ -339,11 +340,10 @@ void getOutLinkIndex(int row){
 //将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
 //根据修正公式得到A矩阵的值
 void generateA(){
-    a_colTotal=colTotal;
     int i,j,total;
     double value;
     //行优先遍历G
-    for(i=0;i<colTotal;i++){
+    for(i=0;i<a_ellTotal;i++){
         getOutLinkIndex(i);
         total=duplicate(outLinkIndex,outLinkIndexTemp);
         //计算GM矩阵该位置的值
@@ -352,7 +352,7 @@ void generateA(){
         else{
             value=1/(double)total;
             //计算A矩阵该位置的值
-            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)colTotal;
+            value=(1-CAMPING_COEFFICIENT)*value+CAMPING_COEFFICIENT/(double)a_ellTotal;
         }
         for(j=0;j<total;j++){
             setAValueByIndex(outLinkIndexTemp[j],i,value);
@@ -364,9 +364,9 @@ void generateA(){
 
 //pageRank向量初始化长度等于总共的链接数且值为1的数组
 void initPageRank(){
-    pageRank=(double *)malloc(a_colTotal* sizeof(double));
-    pageRankTemp=(double *)malloc(a_colTotal* sizeof(double));
-    for(int i=0;i<a_colTotal;i++){
+    pageRank=(double *)malloc(a_ellTotal* sizeof(double));
+    pageRankTemp=(double *)malloc(a_ellTotal* sizeof(double));
+    for(int i=0;i<a_ellTotal;i++){
         pageRank[i]=1;
         pageRankTemp[i]=1;
     }
@@ -374,16 +374,16 @@ void initPageRank(){
 }
 
 void generatePageRank(){
-    printPageRank();
+    //printPageRank();
     int i,j,k,col;
     int num=0;
     bool successFlag= false;
     double value;
-    int *flag=(int *)malloc(a_colTotal* sizeof(int));
+    int *flag=(int *)malloc(a_ellTotal* sizeof(int));
     while (!successFlag){
         successFlag=true;
-        for(i=0;i<a_colTotal;i++){
-            memset(flag,0, a_colTotal* sizeof(int));
+        for(i=0;i<a_ellTotal;i++){
+            memset(flag,0, a_ellTotal* sizeof(int));
             value=0;
             //int num=a_ellCol[i][ELL_LEN+1]-ELL_LEN;
             for(j=0;j<ELL_LEN;j++){
@@ -393,22 +393,22 @@ void generatePageRank(){
                     flag[col]=1;
                 }
             }
-            for(k=0;k<a_colTotal;k++){
+            for(k=0;k<a_cooCol;k++){
                 if(a_cooIndex[ROW][k]==i){
                     col=a_cooIndex[COL][k];
                     value+=(pageRank[col]*a_cooValue[k]);
                     flag[col]=1;
                 }
             }
-            for(k=0;k<a_colTotal;k++){
+            for(k=0;k<a_ellTotal;k++){
                 if(flag[k]==0)
-                    value+=(pageRank[k]*(CAMPING_COEFFICIENT/(double)colTotal));
+                    value+=(pageRank[k]*(CAMPING_COEFFICIENT/(double)a_ellTotal));
             }
             if(fabs(pageRank[i]-value)>LIMIT)
                 successFlag= false;
             pageRankTemp[i]=value;
         }
-        for(i=0;i<a_colTotal;i++)
+        for(i=0;i<a_ellTotal;i++)
             pageRank[i]=pageRankTemp[i];
         //printPageRank();
         num++;
@@ -418,7 +418,7 @@ void generatePageRank(){
 
 int getMaxFromPageRank(double lastMax) {
     int maxIndex=0;
-    for(int i=1;i<a_colTotal;i++){
+    for(int i=1;i<a_ellTotal;i++){
         if(pageRank[i]>pageRank[maxIndex]&&pageRank[i]<lastMax)
             maxIndex=i;
     }
@@ -427,6 +427,9 @@ int getMaxFromPageRank(double lastMax) {
 
 void printPageRank(){
     printf("pageRank:\n");
+    /*for (int k = 0; k < ellTotal; ++k) {
+        printf("%d:%f\n",k,pageRank[k]);
+    }*/
     int maxIndex;
     double lastMax=99999;
     FILE *out;
@@ -434,7 +437,7 @@ void printPageRank(){
     if((out = fopen("./result.txt", "r")) == NULL){
         exit(1);
     }
-    for(int i=0;i<10;i++){
+    for(int i=0;i<20;i++){
         maxIndex=getMaxFromPageRank(lastMax);
         printf("***%d***  %f ",i+1,pageRank[maxIndex]);
         fseek(out, 0, SEEK_SET);
