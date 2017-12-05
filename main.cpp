@@ -316,6 +316,7 @@ int main(int argc,char* argv[]){
     }
     close(epfd);
     fclose(out);
+    fclose(link);
     printf("\n*****total:%d\n",urlId);
     printf("mallocEllCoo\n");
     mallocEllCoo(urlId);

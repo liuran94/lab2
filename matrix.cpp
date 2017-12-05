@@ -91,8 +91,8 @@ void mallocEllCoo(int urlId){
 }
 void fileToEllCoo(AC_STRUCT *tree){
     FILE *fp = fopen("./link.txt", "r");
-    char buffer[1024];
-    char writebuffer[1024];
+    char buffer[MAXSIZE];
+    char writebuffer[MAXSIZE];
     int index=0,ibuffer,i,id;
     if(NULL == fp)
     {
@@ -100,6 +100,12 @@ void fileToEllCoo(AC_STRUCT *tree){
         exit(1);
     }
     while(fgets(buffer,MAXSIZE,fp)!=NULL){
+        if(strcmp(buffer,"\n")==0){
+            memset(buffer,0,sizeof(buffer));
+            memset(writebuffer,0,sizeof(writebuffer));
+            index=0;
+            continue;
+        }
         while(buffer[index]!=' '){
             writebuffer[index]=buffer[index];
             index++;
@@ -108,12 +114,14 @@ void fileToEllCoo(AC_STRUCT *tree){
         ibuffer=atoi(writebuffer);
         memset(writebuffer,0,sizeof(writebuffer));
         i=0;
-        while(buffer[index]!='\n'){
+        index++;
+        while(buffer[index]!='\n'&&index<MAXSIZE){
             writebuffer[i]=buffer[index];
             index++;
             i++;
         }
         writebuffer[i]='\0';
+        printf("ibuffer:%d",ibuffer);
         id=ac_search_string(tree,writebuffer,strlen(writebuffer));
         if(id!=-1){
             addInEllCoo(id,ibuffer);
@@ -123,7 +131,7 @@ void fileToEllCoo(AC_STRUCT *tree){
         index=0;
     }
     fclose(fp);
-    remove("./link.txt");
+    //remove("./link.txt");
 }
 void reallocEll(int row){
     ellCol=(int**)realloc(ellCol,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
