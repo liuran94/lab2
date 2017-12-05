@@ -36,7 +36,7 @@ struct epoll_event events[MAX_CONNECT_NUM];
 int urlId=0;
 
 void sendRequest(int isIndex,int *socket_client);
-int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree,Queue* q);
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q);
 void setnoblocking(int socket_client);
 
 void setnoblocking(int socket_client){
@@ -70,31 +70,54 @@ void sendRequest(int isIndex,int *socket_client){
     send(*socket_client,request,strlen(request),MSG_NOSIGNAL);
     return;
 }
-int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url,AC_STRUCT *tree,Queue* q){
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q){
     //Download Page
+    int urlid;
+    bool flag;
     char *PageBuf=(char *)malloc(ContentLength);
     char *endPattern=(char *)malloc(sizeof(char)*8);
+    char writeUrl[MAX_PATH_LENGTH];
     memset(PageBuf, 0, ContentLength);
 
     int byteread = 0;
-    int ret = 1;
+    int ret;
 
     ret = recv(socket_client, PageBuf + byteread, ContentLength - byteread, 0);
-    if(ret==0) return 0;
-    if(ret<0&&errno == EAGAIN) return 1;
-    if(ret<0&&errno != EAGAIN) return -1;
-    //if(ret>=0)printf("ret: %d\n",ret);
-    //printf("err: %d\n",errno);
+    //printf("ret:%d\n",ret);
+    if(ret==0){
+        free(PageBuf);
+        free(endPattern);
+        return 0;
+    }
+    if(ret<0&&errno == EAGAIN){
+        free(PageBuf);
+        free(endPattern);
+        return 1;
+    }
+    if(ret<0&&errno != EAGAIN){
+        free(PageBuf);
+        free(endPattern);
+        return -1;
+    }
     if(ret > 0) {
         byteread = byteread + ret;
     }
-    if(ContentLength - byteread < 100) {
-        printf("\nRealloc memory...\n");
-        ContentLength = ContentLength * 2;
-        PageBuf = (char *)realloc(PageBuf, ContentLength);
-    }
-
+//    if(ContentLength - byteread < 100) {
+//        printf("\nRealloc memory...\n");
+//        ContentLength = ContentLength * 2;
+//        PageBuf = (char *)realloc(PageBuf, ContentLength);
+//    }
     PageBuf[byteread] = '\0';
+    //printf("%s\n",PageBuf);
+    if(strstr(PageBuf,"404 Not Found")!=NULL||
+       strstr(PageBuf,"403 Forbidden")!=NULL||
+       strstr(PageBuf,"301 Moved Permanently")!=NULL||
+       strstr(url,".jpg")!=NULL){
+        //printf("Illegal Status Code.\n");
+        free(PageBuf);
+        free(endPattern);
+        return 0;
+    }
     int i=0,j=0;
     while(j<8){
         if(PageBuf[byteread-i]=='\n'||PageBuf[byteread-i]=='\r'||PageBuf[byteread-i]=='\f'){
@@ -105,14 +128,18 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
         i++;j++;
     }
 
-    //printf("num = %d    ", *num);
-    *num=*num+1;
+    flag=false;
+    urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
+    if(flag){
+        sprintf(writeUrl,"%s %d\n",url,urlid);
+        //printf("%s\n",writeUrl);
+        fputs(writeUrl,out);
+    }
 
     //analysis url
-    searchURL(PageBuf,url,out,tree,q,&urlId);
+    searchURL(PageBuf,url,link,q,urlId);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
-//    printf("endpattern:%s\n",endPattern);
 
     free(PageBuf);
 //    printf("URL:%s\n",url);
@@ -130,19 +157,19 @@ int revResponse(int socket_client,int ContentLength,int *num,FILE *out,char *url
 
 int main(int argc,char* argv[]){
     int socket_client;
-    int num = 0;
     int isIndex;
     int outflag=0;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
-    //char ipaddress[]="118.244.253.70";
     char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
-    FILE *out;
+    FILE *out,*link;
     if((out = fopen("./result.txt", "w")) == NULL){
         exit(1);
     }
-
+    if((link = fopen("./link.txt", "w")) == NULL){
+        exit(1);
+    }
     memset(&serveraddr,0,sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
     //serveraddr.sin_port = htons(atoi(argv[2]));
@@ -162,8 +189,6 @@ int main(int argc,char* argv[]){
     //q.push(currentURL);
 
     AC_STRUCT *tree= ac_alloc();
-    mallocEllCoo();
-    //printEllCoo();
 
     int firstid;
     bool firstflag= false;
@@ -173,7 +198,6 @@ int main(int argc,char* argv[]){
     sprintf(request,"%s %d\n",currentURL,firstid);
     fputs(request,out);
 
-    chdir("./download");
     int j,n,state;
     int connectNum=0;
     epfd = epoll_create(MAX_CONNECT_NUM);	//生成用于处理accept的epoll专用文件描述符，最多监听256个事件
@@ -229,7 +253,7 @@ int main(int argc,char* argv[]){
             if( events[i].events&EPOLLIN ) //接收到数据，读socket
             {
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
-                state=revResponse(arg->sock_c, ContentLength, &num, out,arg->url,tree,&q);
+                state=revResponse(arg->sock_c, ContentLength,out,link,arg->url,tree,&q);
                 if(state==0){//全部接收完成
                     close(arg->sock_c);
 //                    printf("close:%d\n",arg->sock_c);
@@ -262,7 +286,6 @@ int main(int argc,char* argv[]){
 
                 memset(host, 0, MAX_PATH_LENGTH);
                 if (!url2host(currentURL, host)) {//判断是否是http， 提取URL中的host
-                    num++;
                     continue;
                 }
 
@@ -294,13 +317,15 @@ int main(int argc,char* argv[]){
     close(epfd);
     fclose(out);
     printf("\n*****total:%d\n",urlId);
+    mallocEllCoo(urlId);
+
     ac_free(tree);
 //    printEllCoo();
-    a_mallocEllCoo();
-    generateA();
-    initPageRank();
-    generatePageRank();
-    printPageRank();
+//    a_mallocEllCoo();
+//    generateA();
+//    initPageRank();
+//    generatePageRank();
+//    printPageRank();
     return 0;
 }
 

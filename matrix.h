@@ -17,7 +17,8 @@
 #define LIMIT 0.01
 
 void printEllCoo();
-void mallocEllCoo();
+void mallocEllCoo(int urlId);
+void fileToEllCoo(AC_STRUCT *tree);
 void reallocEll(int row);
 void quickSort(int* arr,int startPos, int endPos);//快排
 int duplicate(int* arr,int* temp,int startPos,int endPos);//去重

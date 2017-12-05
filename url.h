@@ -12,7 +12,7 @@ typedef struct urlWithFatherId {
     char url[MAX_PATH_LENGTH];
 } urlWithFather;
 int getPath(char currenturl[],char* path);
-int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,Queue* q,int* id);
+int searchURL(char* currentpage,char *url,FILE *out,Queue* q,int id);
 //int searchURL(char* currentpage,char *url,FILE *out,AC_STRUCT *tree,queue<char*> q,int* id);
 int url2host(char url[],char host[]);
 

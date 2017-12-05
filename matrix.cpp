@@ -9,7 +9,7 @@
 
 int outLinkIndex[500000];
 
-int cooCol=0,cooTotal=16,ellTotal=1024,colTotal=0;
+int cooCol=0,cooTotal=16,ellTotal=0,colTotal=0;
 int **ellCol,**cooArray;
 
 //a_cooIndex是记录coo矩阵的行号和列号的二维int型矩阵
@@ -70,7 +70,8 @@ void printAEllCoo(){
     }
 }
 
-void mallocEllCoo(){
+void mallocEllCoo(int urlId){
+    ellTotal=urlId+1;
     int i;
     ellCol=(int**)malloc(ellTotal*sizeof(int*)); //第一维
     for(i=0;i<ellTotal; i++)
@@ -87,7 +88,15 @@ void mallocEllCoo(){
     }
 
 }
+void fileToEllCoo(AC_STRUCT *tree){
+    FILE *fp = fopen("./link.txt", "r");
+    if(NULL == fp)
+    {
+        printf("failed to open link.txt\n");
+        exit(1);
+    }
 
+}
 void reallocEll(int row){
     ellCol=(int**)realloc(ellCol,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
     for(int i=0;i<(row-ellTotal+1);i++) {
