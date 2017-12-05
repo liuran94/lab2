@@ -14,15 +14,15 @@
 //阻尼系数
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值
-#define LIMIT 0.01
+#define LIMIT 0.001
 
 void printEllCoo();
 void mallocEllCoo(int urlId);
 void fileToEllCoo(AC_STRUCT *tree);
 void reallocEll(int row);
 void quickSort(int* arr,int startPos, int endPos);//快排
-int duplicate(int* arr,int* temp,int startPos,int endPos);//去重
-void addInEllCoo(int* arr,int n,int row);//存入稀疏矩阵ELL+COO
+int duplicate(int* arr,int* temp);//去重
+void addInEllCoo(int col,int row);//存入稀疏矩阵ELL+COO
 void freeEllCoo();
 void a_mallocEllCoo();
 void a_reallocEll(int row);

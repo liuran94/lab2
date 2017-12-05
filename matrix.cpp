@@ -8,6 +8,7 @@
 #include "matrix.h"
 
 int outLinkIndex[500000];
+int outLinkIndexTemp[500000];
 
 int cooCol=0,cooTotal=16,ellTotal=0,colTotal=0;
 int **ellCol,**cooArray;
@@ -90,12 +91,39 @@ void mallocEllCoo(int urlId){
 }
 void fileToEllCoo(AC_STRUCT *tree){
     FILE *fp = fopen("./link.txt", "r");
+    char buffer[1024];
+    char writebuffer[1024];
+    int index=0,ibuffer,i,id;
     if(NULL == fp)
     {
         printf("failed to open link.txt\n");
         exit(1);
     }
-
+    while(fgets(buffer,MAXSIZE,fp)!=NULL){
+        while(buffer[index]!=' '){
+            writebuffer[index]=buffer[index];
+            index++;
+        }
+        writebuffer[index]='\0';
+        ibuffer=atoi(writebuffer);
+        memset(writebuffer,0,sizeof(writebuffer));
+        i=0;
+        while(buffer[index]!='\n'){
+            writebuffer[i]=buffer[index];
+            index++;
+            i++;
+        }
+        writebuffer[i]='\0';
+        id=ac_search_string(tree,writebuffer,strlen(writebuffer));
+        if(id!=-1){
+            addInEllCoo(id,ibuffer);
+        }
+        memset(buffer,0,sizeof(buffer));
+        memset(writebuffer,0,sizeof(writebuffer));
+        index=0;
+    }
+    fclose(fp);
+    remove("./link.txt");
 }
 void reallocEll(int row){
     ellCol=(int**)realloc(ellCol,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
@@ -118,50 +146,31 @@ void freeEllCoo(){
     free(cooArray);
 }
 
-void addInEllCoo(int* arr,int n,int row){
+void addInEllCoo(int col,int row){
     if(row+1>colTotal) colTotal=row+1;
     int i,j;
 //    printf("row:%d\n",row);
-    if(row>=ellTotal) reallocEll(row);
+//    if(row>=ellTotal) reallocEll(row);
     //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
     //ellCol[row][0]=row;
 
     //printf("Nellcol:%d\n",ellCol[row][ELL_LEN]);
     if(ellCol[row][ELL_LEN]<ELL_LEN) {
-        for (i = 0; i < n; i++) {
-            if (i+ellCol[row][ELL_LEN] < ELL_LEN) {//ELL还可存
-                ellCol[row][i+ellCol[row][ELL_LEN]] = arr[i];
-            } else {//存入COO
-                if (cooCol >= cooTotal) {//COO矩阵溢出
-                    for (j = 0; j < 2; j++) {
-                        cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
-                    }
-                    cooTotal *= 2;
-                    //printf("cooTotal:%d\n",cooTotal);
-                }
-                cooArray[ROW][cooCol] = row;
-                cooArray[COL][cooCol] = arr[i];
-                //cooArray[VALUE][cooCol] = 1;
-                cooCol++;
-            }
-        }
+        ellCol[row][ellCol[row][ELL_LEN]] = col;
     }
     else{
-        for (i = 0; i < n; i++) {
-                if (cooCol >= cooTotal) {//COO矩阵溢出
-                    for (j = 0; j < 2; j++) {
-                        cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
-                    }
-                    cooTotal *= 2;
-                    //printf("cooTotal:%d\n",cooTotal);
-                }
-                cooArray[ROW][cooCol] = row;
-                cooArray[COL][cooCol] = arr[i];
-                //cooArray[VALUE][cooCol] = 1;
-                cooCol++;
+        if (cooCol >= cooTotal) {//COO矩阵溢出
+            for (j = 0; j < 2; j++) {
+                cooArray[j] = (int *) realloc(cooArray[j], 2 * cooTotal * sizeof(int));//COO长度翻倍
+            }
+            cooTotal *= 2;
+            //printf("cooTotal:%d\n",cooTotal);
         }
+        cooArray[ROW][cooCol] = row;
+        cooArray[COL][cooCol] = col;
+        cooCol++;
     }
-    ellCol[row][ELL_LEN]=ellCol[row][ELL_LEN]+n;
+    ellCol[row][ELL_LEN]=ellCol[row][ELL_LEN]+1;
 }
 
 void quickSort(int* arr,int startPos, int endPos) {
@@ -183,7 +192,8 @@ void quickSort(int* arr,int startPos, int endPos) {
 }
 
 //将arr数组中的数据去重后存入temp中
-int duplicate(int* arr,int* temp,int startPos,int endPos){
+int duplicate(int* arr,int* temp){
+    memset(temp, -1, 500000 * sizeof(int));
     int n,i=0,j=0,tindex=0;
     bool flag= false;
 
@@ -345,11 +355,12 @@ void generateA(){
             //printf("value1 %lf\n",value1);
         }
         getOutLinkIndex(i);
+        duplicate(outLinkIndex,outLinkIndexTemp);
         /*for(j=0;j<colTotal;j++){
             setAValueByIndex(j,i,CAMPING_COEFFICIENT/(double)colTotal);
         }*/
         for(j=0;j<total;j++){
-            setAValueByIndex(outLinkIndex[j],i,value);
+            setAValueByIndex(outLinkIndexTemp[j],i,value);
         }
         /*for (j = 0; j < colTotal; j++) {
             //写入A矩阵

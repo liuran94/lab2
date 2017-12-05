@@ -137,7 +137,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
     }
 
     //analysis url
-    searchURL(PageBuf,url,link,q,urlId);
+    searchURL(PageBuf,url,link,q,urlid);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
 
@@ -317,15 +317,22 @@ int main(int argc,char* argv[]){
     close(epfd);
     fclose(out);
     printf("\n*****total:%d\n",urlId);
+    printf("mallocEllCoo\n");
     mallocEllCoo(urlId);
+    printf("fileToEllCoo\n");
+    fileToEllCoo(tree);
 
     ac_free(tree);
-//    printEllCoo();
-//    a_mallocEllCoo();
-//    generateA();
-//    initPageRank();
-//    generatePageRank();
-//    printPageRank();
+    //printEllCoo();
+    printf("a_mallocEllCoo\n");
+    a_mallocEllCoo();
+    printf("generateA\n");
+    generateA();
+    printf("initPageRank\n");
+    initPageRank();
+    printf("generatePageRank\n");
+    generatePageRank();
+    printPageRank();
     return 0;
 }
 
