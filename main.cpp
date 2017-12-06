@@ -22,6 +22,7 @@ using namespace std;
 
 typedef struct {
     char url[MAX_PATH_LENGTH];
+    bool haveRecv;
     int sock_c;
 } Ev_arg;
 
@@ -78,6 +79,8 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
     char *PageBuf=(char *)malloc(ContentLength);
     char *endPattern=(char *)malloc(sizeof(char)*8);
     char writeUrl[MAX_PATH_LENGTH];
+    FILE *file;
+    char filename[MAX_PATH_LENGTH];
     memset(PageBuf, 0, ContentLength);
 
     int byteread = 0;
@@ -86,9 +89,12 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
     ret = recv(socket_client, PageBuf + byteread, ContentLength - byteread, 0);
     //printf("ret:%d\n",ret);
     if(ret==0){
+        urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
+        sprintf(filename,"./download/%d.txt",urlid);
+        searchURL(filename,url,link,test,q,urlid);
         free(PageBuf);
         free(endPattern);
-        return 0;
+        return 2;
     }
     if(ret<0&&errno == EAGAIN){
         free(PageBuf);
@@ -138,36 +144,32 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
         fputs(writeUrl,out);
     }
     if(!flag&&strstr(PageBuf,"HTTP/1.1")!=NULL){
-//        free(PageBuf);
-//        free(endPattern);
-//        return 0;
         sprintf(writeUrl,"%s %d\n",url,urlid);
         fputs(writeUrl,test);
     }
-//    FILE *file;
-//    char filename[MAX_PATH_LENGTH];
-//    sprintf(filename,"./download/%d.txt",urlid);
-//    if((file = fopen(filename, "a")) == NULL){
-//        exit(1);
-//    }
-//    fputs(PageBuf,file);
-//    fclose(file);
 
-    //analysis url
-    searchURL(PageBuf,url,link,test,q,urlid);
+    sprintf(filename,"./download/%d.txt",urlid);
+    if((file = fopen(filename, "a")) == NULL){
+        printf("Recv: Failed to open %s.\n",filename);
+        exit(1);
+    }
+    fputs(PageBuf,file);
+    fclose(file);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
-
-    free(PageBuf);
 
     if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0
        ||strcmp(endPattern,"script>")==0||strcmp(endPattern,"SCRIPT>")==0
        ||strcmp(endPattern,"nclude>")==0||strcmp(endPattern,"NCLUDE>")==0
        ||strcmp(endPattern,"adcode>")==0){
+        //analysis url
+        searchURL(filename,url,link,test,q,urlid);
         free(endPattern);
-        //remove(filename);
+        free(PageBuf);
+        remove(filename);
         return 0;
     }
+    free(PageBuf);
     free(endPattern);
     return 1;
 }
@@ -218,8 +220,7 @@ int main(int argc,char* argv[]){
     for(int i=0;i<MAX_CONNECT_NUM;i++) {
         events[i].data.fd=-1;
     }
-    while(outflag!=4)
-    {
+    while(q.size!=0||connectNum!=0) {
         if(n==0&&q.size==0&&connectNum!=0&&!timingflag){
             timingflag=true;
             timing=clock();
@@ -235,12 +236,6 @@ int main(int argc,char* argv[]){
             }
         }
         printf("queueNum %d\n",q.size);
-        if(outflag==1&&q.size>0){//队列开始增加
-            outflag=2;//等待队列收敛
-        }
-        else if(outflag==2&&q.size==0){//队列收敛结束
-            outflag=3;//等待最后的接收完毕
-        }
         j=0;
         while(j<q.size&&connectNum<MAX_CONNECT_NUM){
 
@@ -254,6 +249,7 @@ int main(int argc,char* argv[]){
                     memset(arg->url, 0, MAX_PATH_LENGTH);
                     strcpy(arg->url, currentURL);
                     arg->sock_c = socket_client;
+                    arg->haveRecv=false;
                     ev.data.ptr = arg;//
 
                     ev.events = EPOLLOUT | EPOLLET;
@@ -270,19 +266,23 @@ int main(int argc,char* argv[]){
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
                 state=revResponse(arg->sock_c, ContentLength,out,link,test,arg->url,tree,&q);
                 if(state==0){//全部接收完成
+                    ev.data.ptr = arg;
+                    ev.events=EPOLLOUT|EPOLLET;
+                    epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);
+                }
+                else if(state==1){//部分接收完成
+                    arg->haveRecv= true;
+                    ev.data.ptr = arg;
+                    ev.events=EPOLLIN|EPOLLET;//下一次继续接收
+                    epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);//修改标识符，等待下一个循环时发送数据，异步处理的精髓
+                }
+                else if(state==2){//服务器超时
+                    if(!arg->haveRecv)
+                        enQueue(&q,arg->url);
                     close(arg->sock_c);
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
-                    if(outflag==3&&connectNum==0){//最后的接收完毕
-                        outflag=4;
-                    }
-
-                }
-                else if(state==1){//部分接收完成
-                    ev.data.ptr = arg;
-                    ev.events=EPOLLIN|EPOLLET;//下一次继续接收
-                    epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);//修改标识符，等待下一个循环时发送数据，异步处理的精髓
                 }
                 else{//错误
                     printf("Error: In revPesponse.\n");
@@ -290,13 +290,15 @@ int main(int argc,char* argv[]){
             }
             else if(events[i].events&EPOLLOUT) //有数据待发送，写socket
             {
-
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
+                if(q.size==0){
+                    close(arg->sock_c);
+                    connectNum--;
+                    ev.data.ptr = arg;
+                    epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+                }
                 deQueue(&q, currentURL);
 
-                if(outflag==0&&q.size==0){//第一次pop主页，队列为空
-                    outflag=1;//等待第一次入队
-                }
                 memset(path, 0, MAX_PATH_LENGTH);
                 isIndex = getPath(currentURL,path);
 
@@ -308,9 +310,8 @@ int main(int argc,char* argv[]){
                 strcpy(arg->url,currentURL);
 
                 ev.data.ptr = arg;
-                //printf("2sk:%d\n",arg->sock_c);
-                ev.events = EPOLLIN|EPOLLET ;    //设置要处理的事件类型。可读，边缘触发
-                epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev); //修改标识符，等待下一个循环时接收数据
+                ev.events = EPOLLIN|EPOLLET ;
+                epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);
             }
             else{
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
@@ -318,9 +319,6 @@ int main(int argc,char* argv[]){
                 connectNum--;
                 ev.data.ptr = arg;
                 epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
-                if(outflag==3&&connectNum==0){//最后的接收完毕
-                    outflag=4;
-                }
             }
         }
 

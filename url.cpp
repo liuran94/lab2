@@ -37,22 +37,25 @@ int getPath(char currenturl[],char* path){
     return 1;
 }
 
-int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id){
+int searchURL(char* filename,char *url,FILE *link,FILE *test,Queue* q,int id){
 
     int state;
     int i,j=0,n;
-    char currentchar;
+
     char urlbuf[MAX_PATH_LENGTH];
     char searchedurl[MAX_PATH_LENGTH];
     char writeBuf[MAX_PATH_LENGTH];
     char urltemp[MAX_PATH_LENGTH];
     char host[MAX_PATH_LENGTH];
     char urlhttp[13]="http://news.";
-
+    FILE * file;
+    if((file = fopen(filename, "r")) == NULL){
+        printf("searchURL: Failed to open %s.\n",filename);
+        return -1;
+    }
     state = 0;
-
-    for(i=0; currentpage[i] != '\0'; i++){
-        currentchar=currentpage[i];
+    char currentchar=fgetc(file);
+    while(currentchar!=EOF){
         switch(state){
             case 0:if(currentchar == '<'){
                     state=1; break;
@@ -154,8 +157,9 @@ int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id)
                 }
                 if(n==5){
                     j=strlen(urlbuf);
-                    if(urlbuf[j-1]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
+                    while(urlbuf[j-1]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
                         urlbuf[j-1]='\0';
+                        j--;
                     }
                     memset(searchedurl,0,MAX_PATH_LENGTH);
                     memset(writeBuf,0,MAX_PATH_LENGTH);
@@ -172,7 +176,9 @@ int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id)
                 }
                 break;
         }
+        currentchar=fgetc(file);
     }
+    fclose(file);
     return 0;
 }
 
