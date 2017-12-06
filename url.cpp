@@ -154,7 +154,7 @@ int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id)
                 }
                 if(n==5){
                     j=strlen(urlbuf);
-                    if(urlbuf[n]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
+                    if(urlbuf[j-1]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
                         urlbuf[j-1]='\0';
                     }
                     memset(searchedurl,0,MAX_PATH_LENGTH);
@@ -170,13 +170,6 @@ int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id)
                     state=0;
                     j=0;
                 }
-//                else{
-//                    if(urlbuf[0]!='h') {
-//                        fputs("##", test);
-//                        fputs(urlbuf, test);
-//                        fputs("\n", test);
-//                    }
-//                }
                 break;
         }
     }
