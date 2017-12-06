@@ -8,44 +8,23 @@
 #include<limits.h>		/*for INT_MAX */
 #include<string>
 #include "bloom.h"
+#include "MurmurHasn2.h"
 using namespace std;
 
-int p_table[MAX_URLPATH_NUM] = { 0 };
-int myEncrypt(char *str, char *key){
-    assert(str != NULL);
-    char *cipher = strdup(str);
-    ecb_crypt(key, cipher, strlen(str), DES_ENCRYPT);	/*第一次映射函数采用ecb_crypt */
-    int i;
-    int var = 0;
-    int len = strlen(cipher);
-    for (i = 0; i < len; i++){
-        var = (var * 7 + cipher[i]) % (int)INT_MAX;
-    }
-    free(cipher);
-    return var;
-}
-
+unsigned int p_table[MAX_URLPATH_NUM] = { 0 };
+unsigned int seed[8]={5, 7, 11, 13, 31, 37, 61 ,71};
 
 /*判断path是否存在过，如果不存在就把它记入PathBloomTable中*/
 int bloomFilter(char *path){
-
-    int mod = 32 * MAX_URLPATH_NUM;
+    unsigned int mod = 32 * MAX_URLPATH_NUM;//m空间
     int flag = 0;
-    //printf("before\n");
 
-    string salt[] = { "Dm", "VB", "ui", "LK", "uj", "RD", "we", "fc" };
-    //printf("after\n");
-    int f[8] = { 0 };
     int g[8] = { 0 };
+    unsigned int hashResult;
     int i;
     for (i = 0; i < 8; i++) {
-        char *key;
-        //printf("bloompath:%s\n",path);
-        key = strdup(salt[i].c_str());
-        f[i] = myEncrypt(path, key);
-        free(key);
-        srand(f[i]);
-        g[i] = rand() % mod;	/* rand() * 33 * MAX_URLPATH_NUM */
+        hashResult=MurmurHash2(path,strlen(path),seed[i]);
+        g[i] = hashResult % mod;	/* rand() * 32 * MAX_URLPATH_NUM */
         int index = g[i] / 32;
         int pos = g[i] % 32;
         if (p_table[index] & (0x80000000 >> pos))//如果与p_table[index]相同

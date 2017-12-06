@@ -37,7 +37,7 @@ int getPath(char currenturl[],char* path){
     return 1;
 }
 
-int searchURL(char* currentpage,char *url,FILE *link,Queue* q,int id){
+int searchURL(char* currentpage,char *url,FILE *link,FILE *test,Queue* q,int id){
 
     int state;
     int i,j=0,n;
@@ -45,13 +45,11 @@ int searchURL(char* currentpage,char *url,FILE *link,Queue* q,int id){
     char urlbuf[MAX_PATH_LENGTH];
     char searchedurl[MAX_PATH_LENGTH];
     char writeBuf[MAX_PATH_LENGTH];
+    char urltemp[MAX_PATH_LENGTH];
+    char host[MAX_PATH_LENGTH];
     char urlhttp[13]="http://news.";
-//    int abuffer[MAXSIZE],temp[MAXSIZE],abindex=0;
 
     state = 0;
-//    masterid=ac_add_string(tree,url,strlen(url),&i,&flag);
-//    memset(abuffer,-1, MAXSIZE* sizeof(int));
-//    memset(temp,-1, MAXSIZE* sizeof(int));
 
     for(i=0; currentpage[i] != '\0'; i++){
         currentchar=currentpage[i];
@@ -132,14 +130,31 @@ int searchURL(char* currentpage,char *url,FILE *link,Queue* q,int id){
                 }
             case 9:urlbuf[j] = '\0';      //char urlhttp[13]="http://news.";
                 state=0;
-                for(n = 0;n <= 11;n++){
+                n=0;
+                while(urlbuf[n]=='\n'||urlbuf[n]=='\r'||urlbuf[n]==' '){//去掉前面的空格和回车
+                    n++;
+                }
+                if(n!=0){
+                    for(int k=0;k<strlen(urlbuf);k++){
+                        urlbuf[k]=urlbuf[k+n];
+                    }
+                }
+                for(n=0;n <= 4;n++){
                     if(urlbuf[n] != urlhttp[n]){
                         break;
                     }
                 }
-                if(n==12){
-
-                    if(urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'){//去末尾的回车或者/
+                if(urlbuf[0]=='/'){
+                    memset(urltemp,0,sizeof(urltemp));
+                    strcpy(urltemp,urlbuf);
+                    memset(urlbuf,0,sizeof(urlbuf));
+                    strcpy(urlbuf,"http://news.sohu.com");
+                    strcpy(urlbuf+20,urltemp);
+                    n=5;
+                }
+                if(n==5){
+                    j=strlen(urlbuf);
+                    if(urlbuf[j-1]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
                         urlbuf[j-1]='\0';
                     }
                     memset(searchedurl,0,MAX_PATH_LENGTH);
@@ -148,18 +163,9 @@ int searchURL(char* currentpage,char *url,FILE *link,Queue* q,int id){
 
                     sprintf(writeBuf,"%d %s\n",id,searchedurl);
                     fputs(writeBuf,link);
-//                    flag=false;
-//                    urlid=ac_add_string(tree,searchedurl,strlen(searchedurl),id,&flag);
-//                    if(flag){
-//                        sprintf(writeUrl,"%s %d\n",searchedurl,urlid);
-//                        fputs(writeUrl,out);
-//                    }
-//                    abuffer[abindex]=urlid;
-//                    abindex++;
 
                     if(!bloomFilter(searchedurl) && (strlen(searchedurl) < MAX_PATH_LENGTH)) {
                         enQueue(q,searchedurl);
-                        //q.push(searchedurl);
                     }
                     state=0;
                     j=0;
@@ -167,11 +173,6 @@ int searchURL(char* currentpage,char *url,FILE *link,Queue* q,int id){
                 break;
         }
     }
-
-//    quickSort(abuffer,0,abindex-1);
-//    n=duplicate(abuffer,temp,0,abindex-1);
-//    addInEllCoo(temp,n,masterid);
-
     return 0;
 }
 

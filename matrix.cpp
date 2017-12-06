@@ -121,7 +121,7 @@ void fileToEllCoo(AC_STRUCT *tree){
             i++;
         }
         writebuffer[i]='\0';
-        printf("ibuffer:%d",ibuffer);
+        //printf("ibuffer:%d",ibuffer);
         id=ac_search_string(tree,writebuffer,strlen(writebuffer));
         if(id!=-1){
             addInEllCoo(id,ibuffer);
@@ -465,7 +465,7 @@ void printPageRank(){
     }
     for(int i=0;i<20;i++){
         maxIndex=getMaxFromPageRank(lastMax);
-        printf("***%d***  %f ",i+1,pageRank[maxIndex]);
+        printf("***%d***  %d %f ",i+1,maxIndex,pageRank[maxIndex]);
         fseek(out, 0, SEEK_SET);
         for(int j=0;j<=maxIndex;j++){
             memset(buffer,0,1024);
