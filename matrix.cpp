@@ -360,12 +360,14 @@ void generateA(){
         }
     }
     freeEllCoo();
-    //printAEllCoo();
+    /*for(i=0;i<a_ellTotal;i++){
+        printf("col:%d num:%d\n",a_ellCol[i][ELL_LEN],i);
+    }*/
 }
 
 //pageRank向量初始化长度等于总共的链接数且值为1的数组
 void initPageRank(){
-    pageRank=(double *)malloc(a_ellTotal* sizeof(double));
+    pageRank=(double *)malloc((a_ellTotal+1)* sizeof(double));
     pageRankTemp=(double *)malloc(a_ellTotal* sizeof(double));
     for(int i=0;i<a_ellTotal;i++){
         pageRank[i]=1;
@@ -409,8 +411,9 @@ void generatePageRank(){
             }*/
 
             for(j=0;j<a_ellTotal;j++){
-                value+=(pageRank[j]*correctValue);
+                value+=pageRank[j];
             }
+            value=value*correctValue;
             for(j=0;j<ELL_LEN&&a_ellCol[i][j]!=-1;j++){
                 num++;
                 row=a_ellCol[i][j];
@@ -437,15 +440,18 @@ void generatePageRank(){
 }
 
 int getMaxFromPageRank(double lastMax) {
-    int maxIndex=0;
-    for(int i=1;i<a_ellTotal;i++){
-        if(pageRank[i]>pageRank[maxIndex]&&pageRank[i]<lastMax)
-            maxIndex=i;
+    int maxIndex=a_ellTotal;
+    int q=0;
+    while (q<a_ellTotal){
+        if(pageRank[q]>pageRank[maxIndex]&&pageRank[q]<lastMax)
+            maxIndex=q;
+        q++;
     }
     return maxIndex;
 }
 
 void printPageRank(){
+    pageRank[a_ellTotal]=-1;
     printf("pageRank:\n");
     /*for (int k = 0; k < ellTotal; ++k) {
         printf("%d:%f\n",k,pageRank[k]);
@@ -461,7 +467,7 @@ void printPageRank(){
         maxIndex=getMaxFromPageRank(lastMax);
         printf("***%d***  %d %f ",i+1,maxIndex,pageRank[maxIndex]);
         fseek(out, 0, SEEK_SET);
-        for(int j=0;j<maxIndex;j++){
+        for(int j=0;j<=maxIndex;j++){
             memset(buffer,0,1024);
             fgets(buffer,1024,out);
         }
