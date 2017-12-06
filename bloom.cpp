@@ -25,7 +25,6 @@ int myEncrypt(char *str, char *key){
     return var;
 }
 
-
 /*判断path是否存在过，如果不存在就把它记入PathBloomTable中*/
 int bloomFilter(char *path){
 

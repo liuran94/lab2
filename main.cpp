@@ -36,7 +36,7 @@ struct epoll_event events[MAX_CONNECT_NUM];
 int urlId=0;
 
 void sendRequest(int isIndex,int *socket_client);
-int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q);
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *test,char *url,AC_STRUCT *tree,Queue* q);
 void setnoblocking(int socket_client);
 
 void setnoblocking(int socket_client){
@@ -70,7 +70,7 @@ void sendRequest(int isIndex,int *socket_client){
     send(*socket_client,request,strlen(request),MSG_NOSIGNAL);
     return;
 }
-int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q){
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *test,char *url,AC_STRUCT *tree,Queue* q){
     //Download Page
     int urlid;
     bool flag;
@@ -108,8 +108,9 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 //        PageBuf = (char *)realloc(PageBuf, ContentLength);
 //    }
     PageBuf[byteread] = '\0';
-    //printf("%s\n",PageBuf);
+
     if(strstr(PageBuf,"404 Not Found")!=NULL||
+       strstr(PageBuf,"400 Bad Request")!=NULL||
        strstr(PageBuf,"403 Forbidden")!=NULL||
        strstr(PageBuf,"301 Moved Permanently")!=NULL||
        strstr(url,".jpg")!=NULL){
@@ -118,6 +119,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
         free(endPattern);
         return 0;
     }
+
     int i=0,j=0;
     while(j<8){
         if(PageBuf[byteread-i]=='\n'||PageBuf[byteread-i]=='\r'||PageBuf[byteread-i]=='\f'){
@@ -132,23 +134,34 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
     urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
     if(flag){
         sprintf(writeUrl,"%s %d\n",url,urlid);
-        //printf("%s\n",writeUrl);
         fputs(writeUrl,out);
     }
+    if(!flag&&strstr(PageBuf,"HTTP/1.1")!=NULL){
+        sprintf(writeUrl,"%s %d\n",url,urlid);
+        fputs(writeUrl,test);
+    }
+//    FILE *file;
+//    char filename[MAX_PATH_LENGTH];
+//    sprintf(filename,"./download/%d.txt",urlid);
+//    if((file = fopen(filename, "a")) == NULL){
+//        exit(1);
+//    }
+//    fputs(PageBuf,file);
+//    fclose(file);
 
     //analysis url
-    searchURL(PageBuf,url,link,q,urlid);
+    searchURL(PageBuf,url,link,test,q,urlid);
 
     memset(currentURL, 0, MAX_PATH_LENGTH);
 
     free(PageBuf);
-//    printf("URL:%s\n",url);
-//    printf("Queue length: %d\n",q->size);
 
     if(strcmp(endPattern,"</html>")==0||strcmp(endPattern,"</HTML>")==0
        ||strcmp(endPattern,"script>")==0||strcmp(endPattern,"SCRIPT>")==0
-       ||strcmp(endPattern,"nclude>")==0||strcmp(endPattern,"NCLUDE>")==0){
+       ||strcmp(endPattern,"nclude>")==0||strcmp(endPattern,"NCLUDE>")==0
+       ||strcmp(endPattern,"adcode>")==0){
         free(endPattern);
+        //remove(filename);
         return 0;
     }
     free(endPattern);
@@ -163,11 +176,14 @@ int main(int argc,char* argv[]){
     struct sockaddr_in serveraddr;
     char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
-    FILE *out,*link;
+    FILE *out,*link,*test;
     if((out = fopen("./result.txt", "w")) == NULL){
         exit(1);
     }
     if((link = fopen("./link.txt", "w")) == NULL){
+        exit(1);
+    }
+    if((test = fopen("./test.txt", "w")) == NULL){
         exit(1);
     }
     memset(&serveraddr,0,sizeof(serveraddr));
@@ -178,15 +194,13 @@ int main(int argc,char* argv[]){
 
     //strcpy(currentURL, argv[1]);
     strcpy(currentURL, "http://news.sohu.com");
-    //strcpy(currentURL, "http://www.baidu.com");
+
     Queue q;
     initQueue(&q);
     while(!isEmpty(q)){//保证开始时队列为空，可删去
         deQueue(&q, request);
-        //q.pop();
     }
     enQueue(&q,currentURL);
-    //q.push(currentURL);
 
     AC_STRUCT *tree= ac_alloc();
 
@@ -198,7 +212,9 @@ int main(int argc,char* argv[]){
     sprintf(request,"%s %d\n",currentURL,firstid);
     fputs(request,out);
 
-    int j,n,state;
+    char wb[MAX_PATH_LENGTH];
+
+    int j,n,state,connectFlag;
     int connectNum=0;
     epfd = epoll_create(MAX_CONNECT_NUM);	//生成用于处理accept的epoll专用文件描述符，最多监听256个事件
     for(int i=0;i<MAX_CONNECT_NUM;i++) {
@@ -231,40 +247,67 @@ int main(int argc,char* argv[]){
         while(j<q.size&&connectNum<MAX_CONNECT_NUM){
 
                 socket_client = socket(AF_INET,SOCK_STREAM,0);
-                connect(socket_client,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
-                setnoblocking(socket_client);
+                connectFlag=connect(socket_client,(struct sockaddr*)&serveraddr,sizeof(serveraddr));
+                if(connectFlag==0) {
+                    setnoblocking(socket_client);
 
-                Ev_arg *arg = (Ev_arg *) malloc(sizeof(Ev_arg));
+                    Ev_arg *arg = (Ev_arg *) malloc(sizeof(Ev_arg));
 
-                memset(arg->url, 0, MAX_PATH_LENGTH);
-                strcpy(arg->url,currentURL);
-                arg->sock_c=socket_client;
-                ev.data.ptr = arg;//
+                    memset(arg->url, 0, MAX_PATH_LENGTH);
+                    strcpy(arg->url, currentURL);
+                    arg->sock_c = socket_client;
+                    ev.data.ptr = arg;//
 
-                ev.events = EPOLLOUT|EPOLLET;    //设置要处理的事件类型。可读，边缘触发
-                epoll_ctl(epfd, EPOLL_CTL_ADD, socket_client, &ev);    //注册ev
-                connectNum++;
-                j++;
+                    ev.events = EPOLLOUT | EPOLLET;
+                    epoll_ctl(epfd, EPOLL_CTL_ADD, socket_client, &ev);    //注册ev
+                    connectNum++;
+                    j++;
+//                    sprintf(wb, "CONNECT  %d\n", arg->sock_c);
+//                    printf("CONNECT  %d\n", arg->sock_c);
+//                    fputs(wb, test);
+//                    memset(wb, 0, sizeof(wb));
+                }
+            else if(connectFlag==-1){
+//                    sprintf(wb, "CONNECT FAILED  %d erron:%d\n", socket_client,errno);
+//                    printf("CONNECT FAILED  %d erron:%d\n", socket_client,errno);
+//                    fputs(wb, test);
+//                    memset(wb, 0, sizeof(wb));
+                }
         }
         n = epoll_wait(epfd,events,MAX_CONNECT_NUM,200);
         printf("wait:%d,%d\n",n,connectNum);
         for(int i=0;i<n;i++){
-
+            //printf("%d is in for loop.\n",i);
             if( events[i].events&EPOLLIN ) //接收到数据，读socket
             {
+                //printf("%d is in EPOLLIN.\n",i);
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
-                state=revResponse(arg->sock_c, ContentLength,out,link,arg->url,tree,&q);
+                state=revResponse(arg->sock_c, ContentLength,out,link,test,arg->url,tree,&q);
                 if(state==0){//全部接收完成
+//                    sprintf(wb,"CLOSE  %s  %d\n",arg->url,arg->sock_c);
+//                    printf("CLOSE  %s  %d\n",arg->url,arg->sock_c);
+//                    fputs(wb,test);
+//                    memset(wb,0,sizeof(wb));
                     close(arg->sock_c);
-//                    printf("close:%d\n",arg->sock_c);
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
                     if(outflag==3&&connectNum==0){//最后的接收完毕
                         outflag=4;
                     }
+//                    sprintf(wb,"RECV0  %s  %d\n",arg->url,arg->sock_c);
+//                    printf("RECV0  %s  %d\n",arg->url,arg->sock_c);
+//                    fputs(wb,test);
+//                    memset(wb,0,sizeof(wb));
+//                    ev.data.ptr = arg;
+//                    ev.events=EPOLLOUT|EPOLLET;
+//                    epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);
                 }
                 else if(state==1){//部分接收完成
+//                    sprintf(wb,"RECV1  %s  %d\n",arg->url,arg->sock_c);
+//                    printf("RECV1  %s  %d\n",arg->url,arg->sock_c);
+//                    fputs(wb,test);
+//                    memset(wb,0,sizeof(wb));
                     ev.data.ptr = arg;
                     ev.events=EPOLLIN|EPOLLET;//下一次继续接收
                     epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev);//修改标识符，等待下一个循环时发送数据，异步处理的精髓
@@ -275,9 +318,17 @@ int main(int argc,char* argv[]){
             }
             else if(events[i].events&EPOLLOUT) //有数据待发送，写socket
             {
+                //printf("%d is in EPOLLOUT.\n",i);
+                Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
+//                if(q.size==0){
+//                    close(arg->sock_c);
+//                    connectNum--;
+//                    ev.data.ptr = arg;
+//                    epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+//                    continue;
+//                }
                 deQueue(&q, currentURL);
-                //strcpy(currentURL,q.front());
-                //q.pop();
+
                 if(outflag==0&&q.size==0){//第一次pop主页，队列为空
                     outflag=1;//等待第一次入队
                 }
@@ -285,14 +336,14 @@ int main(int argc,char* argv[]){
                 isIndex = getPath(currentURL,path);
 
                 memset(host, 0, MAX_PATH_LENGTH);
-                if (!url2host(currentURL, host)) {//判断是否是http， 提取URL中的host
-                    continue;
-                }
+                url2host(currentURL, host);
 
-                Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
-                //printf("arg:%s\n",arg->url);
 
                 sendRequest(isIndex, &(arg->sock_c));
+//                sprintf(wb,"SEND  %s  %d\n",currentURL,arg->sock_c);
+//                printf("SEND  %s  %d\n",currentURL,arg->sock_c);
+//                fputs(wb,test);
+//                memset(wb,0,sizeof(wb));
                 memset(arg->url,0,MAX_PATH_LENGTH);
                 strcpy(arg->url,currentURL);
 
@@ -302,7 +353,11 @@ int main(int argc,char* argv[]){
                 epoll_ctl(epfd,EPOLL_CTL_MOD,arg->sock_c,&ev); //修改标识符，等待下一个循环时接收数据
             }
             else{
+                //printf("%d is in else.\n",i);
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
+//                sprintf(wb,"UNKNOWN  %s  %d\n",currentURL,arg->sock_c);
+//                printf("UNKNOWN  %s  %d\n",currentURL,arg->sock_c);
+//                fputs(wb,test);
                 close(arg->sock_c);
                 connectNum--;
                 ev.data.ptr = arg;
@@ -311,12 +366,14 @@ int main(int argc,char* argv[]){
                     outflag=4;
                 }
             }
+            //printf("%d is going out of for loop.\n",i);
         }
 
     }
     close(epfd);
     fclose(out);
     fclose(link);
+    fclose(test);
     printf("\n*****total:%d\n",urlId);
     printf("mallocEllCoo\n");
     mallocEllCoo(urlId);
