@@ -178,6 +178,7 @@ int main(int argc,char* argv[]){
     int outflag=0;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
+    //char ipaddress[]="10.108.112.96";
     char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
     FILE *out,*link,*test;
