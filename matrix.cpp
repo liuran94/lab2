@@ -106,9 +106,15 @@ void fileToEllCoo(AC_STRUCT *tree){
             index=0;
             continue;
         }
-        while(buffer[index]!=' '){
+        while(buffer[index]!=' '&&index<MAXSIZE){
             writebuffer[index]=buffer[index];
             index++;
+        }
+        if(index==MAXSIZE){
+            memset(buffer,0,sizeof(buffer));
+            memset(writebuffer,0,sizeof(writebuffer));
+            index=0;
+            continue;
         }
         writebuffer[index]='\0';
         ibuffer=atoi(writebuffer);
