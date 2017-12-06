@@ -89,9 +89,12 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
     ret = recv(socket_client, PageBuf + byteread, ContentLength - byteread, 0);
     //printf("ret:%d\n",ret);
     if(ret==0){
+        int scode;
         urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
         sprintf(filename,"./download/%d.txt",urlid);
-        searchURL(filename,url,link,test,q,urlid);
+        scode=searchURL(filename,url,link,test,q,urlid);
+        if(scode==0)
+            remove(filename);
         free(PageBuf);
         free(endPattern);
         return 2;
