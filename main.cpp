@@ -27,7 +27,7 @@ typedef struct {
     int sock_c;
 } Ev_arg;
 
-char tempDir[MAX_PATH_LENGTH]="./download";
+char tempDir[MAX_PATH_LENGTH];
 char currentURL[MAX_PATH_LENGTH];
 char request[MAX_PATH_LENGTH];
 char host[MAX_PATH_LENGTH];
@@ -90,7 +90,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
     if(ret==0){
         int scode;
         urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
-        sprintf(filename,"./download/%d.txt",urlid);
+        sprintf(filename,"%s/%d.txt",tempDir,urlid);
         scode=searchURL(filename,link,q,urlid);
         if(scode==0)
             remove(filename);
@@ -141,7 +141,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
         fputs(writeUrl,out);
     }
 
-    sprintf(filename,"./download/%d.txt",urlid);
+    sprintf(filename,"%s/%d.txt",tempDir,urlid);
     if((file = fopen(filename, "a")) == NULL){
         printf("Recv: Failed to open %s.\n",filename);
         exit(1);
@@ -209,14 +209,17 @@ int main(int argc,char* argv[]){
 
     AC_STRUCT *tree= ac_alloc();
 
-    int j,n,state,connectFlag;
+    int j,n,state,connectFlag,lastNum=0;
     int connectNum=0;
     epfd = epoll_create(MAX_CONNECT_NUM);	//生成用于处理accept的epoll专用文件描述符，最多监听256个事件
     for(int i=0;i<MAX_CONNECT_NUM;i++) {
         events[i].data.fd=-1;
     }
     while(q.size!=0||connectNum!=0) {
-        printf("queueNum %d\n",q.size);
+        if(abs(q.size-lastNum)>=5000){
+            printf("Queue size: %d\n",q.size);
+            lastNum=q.size;
+        }
         j=0;
         while(j<q.size&&connectNum<MAX_CONNECT_NUM){
 
@@ -240,7 +243,7 @@ int main(int argc,char* argv[]){
                 }
         }
         n = epoll_wait(epfd,events,MAX_CONNECT_NUM,200);
-        printf("wait:%d,%d\n",n,connectNum);
+        //printf("wait:%d,%d\n",n,connectNum);
         for(int i=0;i<n;i++){
             if( events[i].events&EPOLLIN ) //接收到数据，读socket
             {
