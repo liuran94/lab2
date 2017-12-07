@@ -13,7 +13,8 @@
 #include "matrix.h"
 #include "bloom.h"
 #include "queue.h"
-
+#include <dirent.h>
+#include <sys/stat.h>
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
 #define MAX_CONNECT_NUM 60
@@ -26,6 +27,7 @@ typedef struct {
     int sock_c;
 } Ev_arg;
 
+char tempDir[MAX_PATH_LENGTH]="./download";
 char currentURL[MAX_PATH_LENGTH];
 char request[MAX_PATH_LENGTH];
 char host[MAX_PATH_LENGTH];
@@ -34,11 +36,10 @@ int epfd;
 struct epoll_event ev;
 struct epoll_event events[MAX_CONNECT_NUM];
 
-//queue<char*> q;
 int urlId=0;
-
+void List(char *path,FILE *link,Queue* q);
 void sendRequest(int isIndex,int *socket_client);
-int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *test,char *url,AC_STRUCT *tree,Queue* q);
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q);
 void setnoblocking(int socket_client);
 
 void setnoblocking(int socket_client){
@@ -72,7 +73,7 @@ void sendRequest(int isIndex,int *socket_client){
     send(*socket_client,request,strlen(request),MSG_NOSIGNAL);
     return;
 }
-int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *test,char *url,AC_STRUCT *tree,Queue* q){
+int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q){
     //Download Page
     int urlid;
     bool flag;
@@ -85,14 +86,12 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
 
     int byteread = 0;
     int ret;
-
     ret = recv(socket_client, PageBuf + byteread, ContentLength - byteread, 0);
-    //printf("ret:%d\n",ret);
     if(ret==0){
         int scode;
         urlid=ac_add_string(tree,url,strlen(url),&urlId,&flag);
         sprintf(filename,"./download/%d.txt",urlid);
-        scode=searchURL(filename,url,link,test,q,urlid);
+        scode=searchURL(filename,link,q,urlid);
         if(scode==0)
             remove(filename);
         free(PageBuf);
@@ -112,19 +111,14 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
     if(ret > 0) {
         byteread = byteread + ret;
     }
-//    if(ContentLength - byteread < 100) {
-//        printf("\nRealloc memory...\n");
-//        ContentLength = ContentLength * 2;
-//        PageBuf = (char *)realloc(PageBuf, ContentLength);
-//    }
     PageBuf[byteread] = '\0';
 
     if(strstr(PageBuf,"404 Not Found")!=NULL||
        strstr(PageBuf,"400 Bad Request")!=NULL||
        strstr(PageBuf,"403 Forbidden")!=NULL||
        strstr(PageBuf,"301 Moved Permanently")!=NULL||
+       strstr(PageBuf,"302 Moved")!=NULL||
        strstr(url,".jpg")!=NULL){
-        //printf("Illegal Status Code.\n");
         free(PageBuf);
         free(endPattern);
         return 0;
@@ -146,10 +140,6 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
         sprintf(writeUrl,"%s %d\n",url,urlid);
         fputs(writeUrl,out);
     }
-    if(!flag&&strstr(PageBuf,"HTTP/1.1")!=NULL){
-        sprintf(writeUrl,"%s %d\n",url,urlid);
-        fputs(writeUrl,test);
-    }
 
     sprintf(filename,"./download/%d.txt",urlid);
     if((file = fopen(filename, "a")) == NULL){
@@ -166,7 +156,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
        ||strcmp(endPattern,"nclude>")==0||strcmp(endPattern,"NCLUDE>")==0
        ||strcmp(endPattern,"adcode>")==0){
         //analysis url
-        searchURL(filename,url,link,test,q,urlid);
+        searchURL(filename,link,q,urlid);
         free(endPattern);
         free(PageBuf);
         remove(filename);
@@ -180,30 +170,34 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
 int main(int argc,char* argv[]){
     int socket_client;
     int isIndex;
-    int outflag=0;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
-    //char ipaddress[]="10.108.112.96";
-    char ipaddress[]="10.108.86.80";
-    //char ipaddress[]="127.0.0.1";
-    FILE *out,*link,*test;
-    if((out = fopen("./result.txt", "w")) == NULL){
+    char url_txtDir[MAX_PATH_LENGTH/2];
+    char result_txtDir[MAX_PATH_LENGTH/2];
+    char link_txtDir[MAX_PATH_LENGTH/2];
+    char ipaddress[50];//"10.108.86.80";
+    strcpy(ipaddress, argv[2]);
+
+    strcpy(url_txtDir, argv[4]);
+    strcpy(result_txtDir, argv[5]);
+    strcpy(tempDir, argv[6]);
+    sprintf(link_txtDir,"%s/link.txt",tempDir);
+    FILE *out,*link;
+    if((out = fopen(url_txtDir, "w")) == NULL){
         exit(1);
     }
-    if((link = fopen("./link.txt", "w")) == NULL){
+    if((link = fopen(link_txtDir, "w")) == NULL){
         exit(1);
     }
-    if((test = fopen("./test.txt", "w")) == NULL){
-        exit(1);
-    }
+    mkdir(tempDir,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     memset(&serveraddr,0,sizeof(serveraddr));
     serveraddr.sin_family = AF_INET;
-    //serveraddr.sin_port = htons(atoi(argv[2]));
-    serveraddr.sin_port = htons(atoi("80"));
+    serveraddr.sin_port = htons(atoi(argv[3]));
+    //serveraddr.sin_port = htons(atoi("80"));
     serveraddr.sin_addr.s_addr = inet_addr(ipaddress);
 
-    //strcpy(currentURL, argv[1]);
-    strcpy(currentURL, "http://news.sohu.com");
+    strcpy(currentURL, argv[1]);
+    //strcpy(currentURL, "http://news.sohu.com");
     bloomFilter(currentURL);
 
     Queue q;
@@ -215,9 +209,6 @@ int main(int argc,char* argv[]){
 
     AC_STRUCT *tree= ac_alloc();
 
-    bool timingflag=false;
-    int timing=0;
-
     int j,n,state,connectFlag;
     int connectNum=0;
     epfd = epoll_create(MAX_CONNECT_NUM);	//生成用于处理accept的epoll专用文件描述符，最多监听256个事件
@@ -225,20 +216,6 @@ int main(int argc,char* argv[]){
         events[i].data.fd=-1;
     }
     while(q.size!=0||connectNum!=0) {
-        if(n==0&&q.size==0&&connectNum!=0&&!timingflag){
-            timingflag=true;
-            timing=clock();
-        }
-        else if((n!=0||q.size!=0)&&timingflag){
-            timingflag=false;
-            timing=0;
-        }
-        if(timingflag){
-            if(clock()-timing>10000){
-                printf("Main loop:timeout.\n");
-                outflag=4;
-            }
-        }
         printf("queueNum %d\n",q.size);
         j=0;
         while(j<q.size&&connectNum<MAX_CONNECT_NUM){
@@ -268,7 +245,7 @@ int main(int argc,char* argv[]){
             if( events[i].events&EPOLLIN ) //接收到数据，读socket
             {
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
-                state=revResponse(arg->sock_c, ContentLength,out,link,test,arg->url,tree,&q);
+                state=revResponse(arg->sock_c, ContentLength,out,link,arg->url,tree,&q);
                 if(state==0){//全部接收完成
                     ev.data.ptr = arg;
                     ev.events=EPOLLOUT|EPOLLET;
@@ -289,12 +266,15 @@ int main(int argc,char* argv[]){
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
                 }
                 else{//错误
-                    printf("Error: In revPesponse.\n");
+                    printf("Error: In revResponse.\n");
                 }
             }
             else if(events[i].events&EPOLLOUT) //有数据待发送，写socket
             {
                 Ev_arg *arg = (Ev_arg *) (events[i].data.ptr);
+                if(q.size==0){
+                    List(tempDir,link,&q);
+                }
                 if(q.size==0){
                     close(arg->sock_c);
                     connectNum--;
@@ -330,43 +310,56 @@ int main(int argc,char* argv[]){
     close(epfd);
     fclose(out);
     fclose(link);
-    fclose(test);
-    printf("\n*****total:%d\n",urlId);
-    printf("mallocEllCoo\n");
+    remove(tempDir);
+    printf("\n***** Total:%d *****\n",urlId);
+    printf("Malloc space for matrix G ...\n");
     mallocEllCoo(urlId);
-    printf("fileToEllCoo\n");
+    printf("Load file to matrix G ...\n");
     fileToEllCoo(tree);
 
     ac_free(tree);
-    //printEllCoo();
-    printf("a_mallocEllCoo\n");
+    printf("Malloc space for matrix A ...\n");
     a_mallocEllCoo();
-    printf("generateA\n");
+    printf("Generate matrix A ...\n");
     generateA();
-    printf("initPageRank\n");
+    printf("Init PageRank ...\n");
     initPageRank();
-    printf("generatePageRank\n");
+    printf("Generate PageRank ...\n");
     generatePageRank();
     printPageRank();
     return 0;
 }
-
-/*
-int main(){
-    mallocEllCoo();
-    int arr0[3]={1,2};
-    addInEllCoo(arr0,2,0);
-
-    int arr1[3]={2};
-    addInEllCoo(arr1,1,1);
-
-    int arr3[3]={0};
-    addInEllCoo(arr3,1,2);
-
-    printEllCoo();
-    a_mallocEllCoo();
-    generateA();
-    initPageRank();
-    generatePageRank();
-    printPageRank();
-}*/
+void List(char *path,FILE *link,Queue* q) {
+    struct dirent *ent = NULL;
+    DIR *pDir;
+    pDir = opendir(path);
+    int urlid;
+    char filename[MAX_PATH_LENGTH];
+    //d_reclen：16表示子目录或以.开头的隐藏文件，24表示普通文本文件,28为二进制文件，还有其他……
+    while (NULL != (ent = readdir(pDir))) {
+        //printf("reclen=%d    type=%d\t", ent->d_reclen, ent->d_type);
+        if (ent->d_reclen == 24) {
+            //d_type：4表示为目录，8表示为文件
+            if (ent->d_type == 8) {
+                //printf("普通文件[%s]\n", ent->d_name);
+            }
+        } else if (ent->d_reclen == 16) {
+            //printf("[.]开头的子目录或隐藏文件[%s]\n", ent->d_name);
+        } else {
+            printf("Loading file [%s]\n", ent->d_name);
+            int scode,i;
+            char numBuf[10];
+            memset(numBuf,0,sizeof(numBuf));
+            for(i=0;i<10&&ent->d_name[i]!='.';i++){
+                numBuf[i]=ent->d_name[i];
+            }
+            numBuf[i]='\0';
+            urlid=atoi(numBuf);
+            sprintf(filename,"%s/%s",path,ent->d_name);
+            scode=searchURL(filename,link,q,urlid);
+            if(scode==0){
+                remove(filename);
+            }
+        }
+    }
+}

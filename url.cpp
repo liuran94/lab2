@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//#include <queue>
 #include "queue.h"
 #include "ac.h"
 #include "url.h"
@@ -37,7 +36,7 @@ int getPath(char currenturl[],char* path){
     return 1;
 }
 
-int searchURL(char* filename,char *url,FILE *link,FILE *test,Queue* q,int id){
+int searchURL(char* filename,FILE *link,Queue* q,int id){
 
     int state;
     int i,j=0,n;
@@ -142,7 +141,7 @@ int searchURL(char* filename,char *url,FILE *link,FILE *test,Queue* q,int id){
                         urlbuf[k]=urlbuf[k+n];
                     }
                 }
-                for(n=0;n <= 4;n++){
+                for(n=0;n <= 11;n++){
                     if(urlbuf[n] != urlhttp[n]){
                         break;
                     }
@@ -153,9 +152,9 @@ int searchURL(char* filename,char *url,FILE *link,FILE *test,Queue* q,int id){
                     memset(urlbuf,0,sizeof(urlbuf));
                     strcpy(urlbuf,"http://news.sohu.com");
                     strcpy(urlbuf+20,urltemp);
-                    n=5;
+                    n=12;
                 }
-                if(n==5){
+                if(n==12){
                     j=strlen(urlbuf);
                     while(urlbuf[j-1]=='\r'||urlbuf[j-1]=='\n'||urlbuf[j-1]=='/'||urlbuf[j-1]==' '){//去末尾的回车或者/或者空格
                         urlbuf[j-1]='\0';
@@ -182,7 +181,7 @@ int searchURL(char* filename,char *url,FILE *link,FILE *test,Queue* q,int id){
     return 0;
 }
 
-int url2host(char url[],char host[]) {//判断是否是https, 将url中的hosts提取出来
+int url2host(char url[],char host[]) {
     int i,j=0;
     int length;
 
