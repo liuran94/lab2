@@ -49,7 +49,7 @@ int searchURL(char* filename,FILE *link,Queue* q,int id){
     char urlhttp[13]="http://news.";
     FILE * file;
     if((file = fopen(filename, "r")) == NULL){
-        printf("searchURL: Failed to open %s.\n",filename);
+        //printf("searchURL: Failed to open %s.\n",filename);
         return -1;
     }
     state = 0;

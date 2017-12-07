@@ -19,7 +19,7 @@
 
 
 void mallocEllCoo(int urlId);
-void fileToEllCoo(AC_STRUCT *tree,char *linkTxtDir);
+void fileToEllCoo(AC_STRUCT *tree);
 
 void quickSort(int* arr,int startPos, int endPos);//快排
 int duplicate(int* arr,int* temp);//去重

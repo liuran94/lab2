@@ -145,7 +145,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 
     sprintf(filename,"%s/%d.txt",tempDir,urlid);
     if((file = fopen(filename, "a")) == NULL){
-        printf("Recv: Failed to open %s.\n",filename);
+        //printf("Recv: Failed to open %s.\n",filename);
         exit(1);
     }
     fputs(PageBuf,file);
@@ -170,26 +170,24 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 }
 
 int main(int argc,char* argv[]){
-    int beginSpiderTime=clock();//记录程序开始时间
+    double beginSpiderTime=clock();//记录程序开始时间
     int socket_client;
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
     struct sockaddr_in serveraddr;
     char url_txtDir[MAX_PATH_LENGTH/2];
     char result_txtDir[MAX_PATH_LENGTH/2];
-    char link_txtDir[MAX_PATH_LENGTH/2];
     char ipaddress[50];//"10.108.86.80";
     strcpy(ipaddress, argv[2]);
 
     strcpy(url_txtDir, argv[4]);
     strcpy(result_txtDir, argv[5]);
     strcpy(tempDir, argv[6]);
-    sprintf(link_txtDir,"%s/link.txt",tempDir);
     FILE *out,*link;
     if((out = fopen(url_txtDir, "w")) == NULL){
         exit(1);
     }
-    if((link = fopen(link_txtDir, "w")) == NULL){
+    if((link = fopen("./link.txt", "w")) == NULL){
         exit(1);
     }
     mkdir(tempDir,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -314,32 +312,33 @@ int main(int argc,char* argv[]){
         }
 
     }
-    long finishSpiderTime=clock();
-    printf("the time to process spider:%lds\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
+    double finishSpiderTime=clock();
+    printf("The time to process spider:%fs\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
     close(epfd);
     fclose(out);
     fclose(link);
-    remove(tempDir);
     printf("\n***** Total:%d *****\n",urlId);
     printf("Malloc space for matrix G ...\n");
     mallocEllCoo(urlId);
     printf("Load file to matrix G ...\n");
-    fileToEllCoo(tree,link_txtDir);
+    fileToEllCoo(tree);
     ac_free(tree);
     printf("Malloc space for matrix A ...\n");
     a_mallocEllCoo();
     printf("Generate matrix A ...\n");
     generateA(url_txtDir);
     printf("Init PageRank ...\n");
-    long finishGenerateMatrix=clock();
-    printf("The time to generate Matrix:%lds\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
+    double finishGenerateMatrix=clock();
+    printf("The time to generate Matrix:%fs\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
-    long finishGeneratePageRank=clock();
-    printf("The time to generate Matrix:%lds\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
-    printf("The total time of this process:%lds\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
+    double finishGeneratePageRank=clock();
+    printf("The time to generate Matrix:%fs\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
+    printf("The total time of this process:%fs\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
     printPageRank(url_txtDir,result_txtDir);
+    remove(tempDir);
+    remove("./link.txt");
     return 0;
 }
 void List(char *path,FILE *link,Queue* q) {
@@ -359,7 +358,7 @@ void List(char *path,FILE *link,Queue* q) {
         } else if (ent->d_reclen == 16) {
             //printf("[.]开头的子目录或隐藏文件[%s]\n", ent->d_name);
         } else {
-            printf("Loading file [%s]\n", ent->d_name);
+            //printf("Loading file [%s]\n", ent->d_name);
             int scode,i;
             char numBuf[10];
             memset(numBuf,0,sizeof(numBuf));
