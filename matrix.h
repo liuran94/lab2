@@ -15,22 +15,23 @@
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值
 #define LIMIT 0.01
+#define MAX_PATH_LENGTH 1024
 
-void printEllCoo();
+
 void mallocEllCoo(int urlId);
-void fileToEllCoo(AC_STRUCT *tree);
-void reallocEll(int row);
+void fileToEllCoo(AC_STRUCT *tree,char *linkTxtDir);
+
 void quickSort(int* arr,int startPos, int endPos);//快排
 int duplicate(int* arr,int* temp);//去重
 void addInEllCoo(int col,int row);//存入稀疏矩阵ELL+COO
 void freeEllCoo();
 void a_mallocEllCoo();
-void a_reallocEll(int row);
-void generateA();
+
+void generateA(char *urlTxtDir);
 void initPageRank();
 void generatePageRank();
-void printPageRank();
-void quickSortForDouble(double* arr,int startPos, int endPos);
+void printPageRank(char *urlTxtDir,char *resultTxtDir);
+
 int getMaxFromPageRank(double lastMax);
 
 #endif //LAB2_MATRIX_H

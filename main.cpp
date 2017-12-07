@@ -118,6 +118,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
        strstr(PageBuf,"403 Forbidden")!=NULL||
        strstr(PageBuf,"301 Moved Permanently")!=NULL||
        strstr(PageBuf,"302 Moved")!=NULL||
+       strstr(PageBuf,"304 Not Modified")!=NULL||
        strstr(url,".jpg")!=NULL){
         free(PageBuf);
         free(endPattern);
@@ -168,6 +169,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 }
 
 int main(int argc,char* argv[]){
+    int beginSpiderTime=clock();//记录程序开始时间
     int socket_client;
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
@@ -283,6 +285,7 @@ int main(int argc,char* argv[]){
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+                    continue;
                 }
                 deQueue(&q, currentURL);
 
@@ -310,6 +313,8 @@ int main(int argc,char* argv[]){
         }
 
     }
+    int finishSpiderTime=clock();
+    printf("the time to process spider:%dms\n",finishSpiderTime-beginSpiderTime);
     close(epfd);
     fclose(out);
     fclose(link);
@@ -318,18 +323,22 @@ int main(int argc,char* argv[]){
     printf("Malloc space for matrix G ...\n");
     mallocEllCoo(urlId);
     printf("Load file to matrix G ...\n");
-    fileToEllCoo(tree);
-
+    fileToEllCoo(tree,link_txtDir);
     ac_free(tree);
     printf("Malloc space for matrix A ...\n");
     a_mallocEllCoo();
     printf("Generate matrix A ...\n");
-    generateA();
+    generateA(url_txtDir);
     printf("Init PageRank ...\n");
+    int finishGenerateMatrix=clock();
+    printf("the time to generate Matrix:%dms\n",finishGenerateMatrix-finishSpiderTime);
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
-    printPageRank();
+    int finishGeneratePageRank=clock();
+    printf("the time to generate Matrix:%dms\n",finishGeneratePageRank-finishGenerateMatrix);
+    printf("the total time of this process:%dms\n",finishGeneratePageRank-beginSpiderTime);
+    printPageRank(url_txtDir,result_txtDir);
     return 0;
 }
 void List(char *path,FILE *link,Queue* q) {
