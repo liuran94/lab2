@@ -285,6 +285,7 @@ int main(int argc,char* argv[]){
                     connectNum--;
                     ev.data.ptr = arg;
                     epoll_ctl(epfd,EPOLL_CTL_DEL,arg->sock_c,&ev);
+                    continue;
                 }
                 deQueue(&q, currentURL);
 
