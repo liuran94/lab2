@@ -15,6 +15,7 @@
 #define CAMPING_COEFFICIENT 0.15
 //计算特征向量的误差值
 #define LIMIT 0.01
+#define MAX_PATH_LENGTH 1024
 
 void printEllCoo();
 void mallocEllCoo(int urlId);

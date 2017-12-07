@@ -123,8 +123,10 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
        strstr(PageBuf,"400 Bad Request")!=NULL||
        strstr(PageBuf,"403 Forbidden")!=NULL||
        strstr(PageBuf,"301 Moved Permanently")!=NULL||
+       strstr(PageBuf,"302 Move temporarily")!=NULL||
+       strstr(PageBuf,"304 Not Modified")!=NULL||
        strstr(url,".jpg")!=NULL){
-        //printf("Illegal Status Code.\n");
+        //printf("Illegal Status Code.%s\n",url);
         free(PageBuf);
         free(endPattern);
         return 0;
@@ -178,6 +180,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,FILE *t
 }
 
 int main(int argc,char* argv[]){
+    int beginSpiderTime=clock();//记录程序开始时间
     int socket_client;
     int isIndex;
     int outflag=0;
@@ -187,7 +190,7 @@ int main(int argc,char* argv[]){
     char ipaddress[]="10.108.86.80";
     //char ipaddress[]="127.0.0.1";
     FILE *out,*link,*test;
-    if((out = fopen("./result.txt", "w")) == NULL){
+    if((out = fopen("./url.txt", "w")) == NULL){
         exit(1);
     }
     if((link = fopen("./link.txt", "w")) == NULL){
@@ -327,6 +330,8 @@ int main(int argc,char* argv[]){
         }
 
     }
+    int finishSpiderTime=clock();
+    printf("the time to process spider:%dms\n",finishSpiderTime-beginSpiderTime);
     close(epfd);
     fclose(out);
     fclose(link);
@@ -336,17 +341,21 @@ int main(int argc,char* argv[]){
     mallocEllCoo(urlId);
     printf("fileToEllCoo\n");
     fileToEllCoo(tree);
-
     ac_free(tree);
     //printEllCoo();
     printf("a_mallocEllCoo\n");
     a_mallocEllCoo();
     printf("generateA\n");
     generateA();
+    int finishGenerateMatrix=clock();
+    printf("the time to generate Matrix:%dms\n",finishGenerateMatrix-finishSpiderTime);
     printf("initPageRank\n");
     initPageRank();
     printf("generatePageRank\n");
     generatePageRank();
+    int finishGeneratePageRank=clock();
+    printf("the time to generate Matrix:%dms\n",finishGeneratePageRank-finishGenerateMatrix);
+    printf("the total time of this process:%dms\n",finishGeneratePageRank-beginSpiderTime);
     printPageRank();
     return 0;
 }

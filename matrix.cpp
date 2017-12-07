@@ -89,6 +89,7 @@ void mallocEllCoo(int urlId){
     }
 
 }
+
 void fileToEllCoo(AC_STRUCT *tree){
     FILE *fp = fopen("./link.txt", "r");
     char buffer[MAXSIZE];
@@ -346,6 +347,13 @@ void getOutLinkIndex(int row){
 //将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
 //根据修正公式得到A矩阵的值
 void generateA(){
+    FILE *fp=NULL;
+    char writeBuf[50];
+
+    if((fp = fopen("./url.txt", "a")) == NULL){
+        exit(1);
+    }
+    fputs("\n",fp);
     int i,j,total;
     double value;
     //行优先遍历G
@@ -362,10 +370,14 @@ void generateA(){
             value=(1-CAMPING_COEFFICIENT)*value;
         }
         for(j=0;j<total;j++){
+            memset(writeBuf,0,strlen(writeBuf));
+            sprintf(writeBuf,"%d %d\n",i,outLinkIndexTemp[j]);
+            fputs(writeBuf,fp);
             setAValueByIndex(i,outLinkIndexTemp[j],value);
         }
     }
     freeEllCoo();
+    fclose(fp);
     /*for(i=0;i<a_ellTotal;i++){
         printf("col:%d num:%d\n",a_ellCol[i][ELL_LEN],i);
     }*/
@@ -457,6 +469,10 @@ int getMaxFromPageRank(double lastMax) {
 }
 
 void printPageRank(){
+    FILE *fp=NULL;
+    char writeBuf[MAX_PATH_LENGTH+50];
+
+    int i,j;
     pageRank[a_ellTotal]=-1;
     printf("pageRank:\n");
     /*for (int k = 0; k < ellTotal; ++k) {
@@ -466,20 +482,33 @@ void printPageRank(){
     double lastMax=999;
     FILE *out;
     char buffer[1024];
-    if((out = fopen("./result.txt", "r")) == NULL){
+    if((out = fopen("./url.txt", "r")) == NULL){
         exit(1);
     }
-    for(int i=0;i<20;i++){
+    if((fp = fopen("./Top10.txt", "w")) == NULL){
+        exit(1);
+    }
+    for(i=0;i<10;i++){
         maxIndex=getMaxFromPageRank(lastMax);
         printf("***%d***  %d %f ",i+1,maxIndex,pageRank[maxIndex]);
         fseek(out, 0, SEEK_SET);
-        for(int j=0;j<=maxIndex;j++){
+        for(j=0;j<=maxIndex;j++){
             memset(buffer,0,1024);
             fgets(buffer,1024,out);
         }
         printf("%s\n",buffer);
+        j=strlen(buffer)-1;
+        while (buffer[j]!=' '){
+            buffer[j]='\0';
+            j--;
+        }
+        memset(writeBuf,0,strlen(writeBuf));
+        sprintf(writeBuf,"%s%f\n",buffer,pageRank[maxIndex]);
+        fputs(writeBuf,fp);
+
         lastMax=pageRank[maxIndex];
     }
     fclose(out);
+    fclose(fp);
 }
 
