@@ -323,12 +323,12 @@ int main(int argc,char* argv[]){
     printf("Malloc space for matrix G ...\n");
     mallocEllCoo(urlId);
     printf("Load file to matrix G ...\n");
-    fileToEllCoo(tree);
+    fileToEllCoo(tree,link_txtDir);
     ac_free(tree);
     printf("Malloc space for matrix A ...\n");
     a_mallocEllCoo();
     printf("Generate matrix A ...\n");
-    generateA();
+    generateA(url_txtDir);
     printf("Init PageRank ...\n");
     int finishGenerateMatrix=clock();
     printf("the time to generate Matrix:%dms\n",finishGenerateMatrix-finishSpiderTime);
@@ -338,7 +338,7 @@ int main(int argc,char* argv[]){
     int finishGeneratePageRank=clock();
     printf("the time to generate Matrix:%dms\n",finishGeneratePageRank-finishGenerateMatrix);
     printf("the total time of this process:%dms\n",finishGeneratePageRank-beginSpiderTime);
-    printPageRank();
+    printPageRank(url_txtDir,result_txtDir);
     return 0;
 }
 void List(char *path,FILE *link,Queue* q) {

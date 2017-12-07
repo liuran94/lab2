@@ -27,50 +27,6 @@ int a_cooCol=0,a_cooTotal=16,a_ellTotal=1024;
 double *pageRank;
 double *pageRankTemp;
 
-void printEllCoo(){
-    //测试打印部分数组
-    printf("ellCol:\n");
-    for(int i=0;i<10;i++){
-        for(int j=0;j<ELL_LEN+1;j++){
-            printf("%d ",ellCol[i][j]);
-        }
-        printf("\n");
-    }
-//    printf("ellValue:\n");
-//    for(int i=0;i<10;i++){
-//        for(int j=0;j<10;j++){
-//            printf("%d ",ellValue[i][j]);
-//        }
-//        printf("\n");
-//    }
-    printf("coo:\n");
-    for(int i=0;i<2;i++){
-        for(int j=0;j<10;j++){
-            printf("%d ",cooArray[i][j]);
-        }
-        printf("\n");
-    }
-    printf("COO length:%d\n",cooTotal);
-}
-
-void printAEllCoo(){
-    //测试打印部分数组
-    printf("AellCol:\n");
-    for(int i=0;i<10;i++){
-        for(int j=0;j<ELL_LEN+1;j++){
-            printf("%d ",a_ellCol[i][j]);
-        }
-        printf("\n");
-    }
-    printf("ellValue:\n");
-    for(int i=0;i<10;i++){
-        for(int j=0;j<10;j++){
-            printf("%lf ",a_ellValue[i][j]);
-        }
-        printf("\n");
-    }
-}
-
 void mallocEllCoo(int urlId){
     ellTotal=urlId+1;
     int i;
@@ -90,8 +46,8 @@ void mallocEllCoo(int urlId){
 
 }
 
-void fileToEllCoo(AC_STRUCT *tree){
-    FILE *fp = fopen("./link.txt", "r");
+void fileToEllCoo(AC_STRUCT *tree,char *linkTxtDir){
+    FILE *fp = fopen(linkTxtDir, "r");
     char buffer[MAXSIZE];
     char writebuffer[MAXSIZE];
     int index=0,ibuffer,i,id;
@@ -139,15 +95,6 @@ void fileToEllCoo(AC_STRUCT *tree){
     }
     fclose(fp);
     //remove("./link.txt");
-}
-void reallocEll(int row){
-    ellCol=(int**)realloc(ellCol,(ellTotal+(row-ellTotal+1))*sizeof(int*)); //第一维
-    for(int i=0;i<(row-ellTotal+1);i++) {
-        ellCol[ellTotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
-        memset(ellCol[ellTotal+i], -1, ELL_LEN * sizeof(int));
-        ellCol[ellTotal+i][ELL_LEN]=0;
-    }
-    ellTotal=row+1;
 }
 
 void freeEllCoo(){
@@ -234,22 +181,6 @@ int duplicate(int* arr,int* temp){
     return tindex;//返回新数组的长度
 }
 
-//根据行列号在稀疏矩阵G中找到对应的元素
-int getGValueByIndex(int row,int col){
-    //取ell该行最后一个数字  表示该行总共的元素个数
-    //int total=ellCol[row][ELL_LEN];
-    int i,j;
-    for(i=0;i<ELL_LEN;i++){
-        if(ellCol[row][i]==col)
-            return 1;
-    }
-    for(j=0;j<cooCol;j++){
-        if(cooArray[ROW][j]==row&&cooArray[COL][j]==col)
-            return 1;
-    }
-    return 0;
-}
-
 //初始化A矩阵的ell和coo矩阵
 void a_mallocEllCoo(){
     int i;
@@ -274,23 +205,6 @@ void a_mallocEllCoo(){
         memset(a_cooIndex[i],-1,a_cooTotal* sizeof(int));
     }
     a_cooValue=(double*)malloc(a_cooTotal* sizeof(double));
-}
-
-//给A矩阵的ell矩阵增加到row行
-void a_reallocEll(int row){
-    a_ellCol=(int**)realloc(a_ellCol,(a_ellTotal+(row-a_ellTotal+1))*sizeof(int*)); //第一维
-    for(int i=0;i<(row-a_ellTotal+1);i++) {
-        a_ellCol[a_ellTotal+i] = (int *) malloc((ELL_LEN+1) * sizeof(int));//第二维
-        memset(a_ellCol[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
-        a_ellCol[a_ellTotal+i][ELL_LEN]=0;
-    }
-
-    a_ellValue=(double **)realloc(a_ellValue,(a_ellTotal+(row-a_ellTotal+1))*sizeof(double *)); //第一维
-    for(int i=0;i<(row-a_ellTotal+1);i++) {
-        a_ellValue[a_ellTotal+i] = (double *) malloc(ELL_LEN * sizeof(double));//第二维
-        //memset(a_ellValue[a_ellTotal+i], -1, ELL_LEN * sizeof(int));
-    }
-    a_ellTotal=row+1;
 }
 
 void setAValueByIndex(int row,int col,double value){
@@ -327,6 +241,7 @@ void setAValueByIndex(int row,int col,double value){
     }
     a_ellCol[col][ELL_LEN]++;
 }
+
 void getOutLinkIndex(int row){
     memset(outLinkIndex, -1, 500000 * sizeof(int));
     //取ell该行最后一个数字  表示该行总共的元素个数
@@ -344,13 +259,14 @@ void getOutLinkIndex(int row){
         }
     }
 }
+
 //将矩阵每一列的非-1元素除以该列非-1元素的总和，得到GM矩阵
 //根据修正公式得到A矩阵的值
-void generateA(){
+void generateA(char *urlTxtDir){
     FILE *fp=NULL;
     char writeBuf[50];
 
-    if((fp = fopen("./url.txt", "a")) == NULL){
+    if((fp = fopen(urlTxtDir, "a")) == NULL){
         exit(1);
     }
     fputs("\n",fp);
@@ -395,38 +311,17 @@ void initPageRank(){
 }
 
 void generatePageRank(){
-    //printPageRank();
     double correctValue=(CAMPING_COEFFICIENT/(double)a_ellTotal);
-    int i,j,k,col,row;
+    int i,j,k,row;
     int pageRankNum=0;
     int num=0;
     bool successFlag= false;
     double value;
-    //int *flag=(int *)malloc(a_ellTotal* sizeof(int));
     while (!successFlag){
         successFlag=true;
         for(i=0;i<a_ellTotal;i++){
             num=0;
-            //memset(flag,0, a_ellTotal* sizeof(int));
             value=0;
-            /*for(j=0;j<ELL_LEN&&j<a_ellCol[i][ELL_LEN];j++){
-                col=a_ellCol[i][j];
-                if(col!=-1){
-                    value+=(pageRank[col]*a_ellValue[i][j]);
-                    flag[col]=1;
-                }
-            }
-            for(k=0;k<a_cooCol;k++){
-                if(a_cooIndex[ROW][k]==i){
-                    col=a_cooIndex[COL][k];
-                    value+=(pageRank[col]*a_cooValue[k]);
-                    flag[col]=1;
-                }
-            }
-            for(k=0;k<a_ellTotal;k++){
-                if(flag[k]==0)
-                    value+=(pageRank[k]*(CAMPING_COEFFICIENT/(double)a_ellTotal));
-            }*/
 
             for(j=0;j<a_ellTotal;j++){
                 value+=pageRank[j];
@@ -452,9 +347,9 @@ void generatePageRank(){
             pageRank[i]=pageRankTemp[i];
         //printPageRank();
         pageRankNum++;
-        printf("pageRank pageRankNum:%d\n",pageRankNum);
+        //printf("pageRank pageRankNum:%d\n",pageRankNum);
     }
-    //printf("pageRank pageRankNum:%d\n",pageRankNum);
+    printf("pageRank pageRankNum:%d\n",pageRankNum);
 }
 
 int getMaxFromPageRank(double lastMax) {
@@ -468,24 +363,21 @@ int getMaxFromPageRank(double lastMax) {
     return maxIndex;
 }
 
-void printPageRank(){
+void printPageRank(char *urlTxtDir,char *resultTxtDir){
     FILE *fp=NULL;
     char writeBuf[MAX_PATH_LENGTH+50];
 
     int i,j;
     pageRank[a_ellTotal]=-1;
-    printf("pageRank:\n");
-    /*for (int k = 0; k < ellTotal; ++k) {
-        printf("%d:%f\n",k,pageRank[k]);
-    }*/
+    //printf("pageRank result:\n");
     int maxIndex;
     double lastMax=999;
     FILE *out;
     char buffer[1024];
-    if((out = fopen("./url.txt", "r")) == NULL){
+    if((out = fopen(urlTxtDir, "r")) == NULL){
         exit(1);
     }
-    if((fp = fopen("./Top10.txt", "w")) == NULL){
+    if((fp = fopen(resultTxtDir, "w")) == NULL){
         exit(1);
     }
     for(i=0;i<10;i++){
