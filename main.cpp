@@ -18,6 +18,7 @@
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
 #define MAX_CONNECT_NUM 60
+#define CLOCKS_PER_SECOND 1000000
 
 using namespace std;
 
@@ -313,8 +314,8 @@ int main(int argc,char* argv[]){
         }
 
     }
-    int finishSpiderTime=clock();
-    printf("the time to process spider:%dms\n",finishSpiderTime-beginSpiderTime);
+    long finishSpiderTime=clock();
+    printf("the time to process spider:%lds\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
     close(epfd);
     fclose(out);
     fclose(link);
@@ -330,14 +331,14 @@ int main(int argc,char* argv[]){
     printf("Generate matrix A ...\n");
     generateA(url_txtDir);
     printf("Init PageRank ...\n");
-    int finishGenerateMatrix=clock();
-    printf("the time to generate Matrix:%dms\n",finishGenerateMatrix-finishSpiderTime);
+    long finishGenerateMatrix=clock();
+    printf("The time to generate Matrix:%lds\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
-    int finishGeneratePageRank=clock();
-    printf("the time to generate Matrix:%dms\n",finishGeneratePageRank-finishGenerateMatrix);
-    printf("the total time of this process:%dms\n",finishGeneratePageRank-beginSpiderTime);
+    long finishGeneratePageRank=clock();
+    printf("The time to generate Matrix:%lds\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
+    printf("The total time of this process:%lds\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
     printPageRank(url_txtDir,result_txtDir);
     return 0;
 }
