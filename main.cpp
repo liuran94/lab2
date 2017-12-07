@@ -18,7 +18,8 @@
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
 #define MAX_CONNECT_NUM 60
-#define CLOCKS_PER_SECOND 1000000
+//todo
+#define CLOCKS_PER_SECOND 1
 
 using namespace std;
 
@@ -170,7 +171,7 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 }
 
 int main(int argc,char* argv[]){
-    double beginSpiderTime=clock();//记录程序开始时间
+    long beginSpiderTime=clock();//记录程序开始时间
     int socket_client;
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
@@ -312,8 +313,8 @@ int main(int argc,char* argv[]){
         }
 
     }
-    double finishSpiderTime=clock();
-    printf("The time to process spider:%fs\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
+    long finishSpiderTime=clock();
+    printf("The time to process spider:%ld\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
     close(epfd);
     fclose(out);
     fclose(link);
@@ -328,14 +329,14 @@ int main(int argc,char* argv[]){
     printf("Generate matrix A ...\n");
     generateA(url_txtDir);
     printf("Init PageRank ...\n");
-    double finishGenerateMatrix=clock();
-    printf("The time to generate Matrix:%fs\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
+    long finishGenerateMatrix=clock();
+    printf("The time to generate Matrix:%ld\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
-    double finishGeneratePageRank=clock();
-    printf("The time to generate Matrix:%fs\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
-    printf("The total time of this process:%fs\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
+    long finishGeneratePageRank=clock();
+    printf("The time to generate Matrix:%ld\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
+    printf("The total time of this process:%ld\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
     printPageRank(url_txtDir,result_txtDir);
     remove(tempDir);
     remove("./link.txt");
