@@ -46,8 +46,8 @@ void mallocEllCoo(int urlId){
 
 }
 
-void fileToEllCoo(AC_STRUCT *tree,char *linkTxtDir){
-    FILE *fp = fopen(linkTxtDir, "r");
+void fileToEllCoo(AC_STRUCT *tree){
+    FILE *fp = fopen("./link.txt", "r");
     char buffer[MAXSIZE];
     char writebuffer[MAXSIZE];
     int index=0,ibuffer,i,id;
@@ -109,14 +109,7 @@ void freeEllCoo(){
 }
 
 void addInEllCoo(int col,int row){
-    //if(row+1>colTotal) colTotal=row+1;
-    int i,j;
-//    printf("row:%d\n",row);
-//    if(row>=ellTotal) reallocEll(row);
-    //ell矩阵的最后一列用于标识该行是否需要继续存到coo中
-    //ellCol[row][0]=row;
-
-    //printf("Nellcol:%d\n",ellCol[row][ELL_LEN]);
+    int j;
     if(ellCol[row][ELL_LEN]<ELL_LEN) {
         ellCol[row][ellCol[row][ELL_LEN]] = col;
     }
@@ -347,9 +340,9 @@ void generatePageRank(){
             pageRank[i]=pageRankTemp[i];
         //printPageRank();
         pageRankNum++;
-        //printf("pageRank pageRankNum:%d\n",pageRankNum);
+        printf("pageRank num:%d\n",pageRankNum);
     }
-    printf("pageRank pageRankNum:%d\n",pageRankNum);
+    //printf("pageRank pageRankNum:%d\n",pageRankNum);
 }
 
 int getMaxFromPageRank(double lastMax) {
