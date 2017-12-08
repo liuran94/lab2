@@ -41,7 +41,7 @@ void List(char *path,FILE *link,Queue* q);
 void sendRequest(int isIndex,int *socket_client);
 int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q);
 void setnoblocking(int socket_client);
-double getTimeGap(struct timeval *start,struct timeval *end);
+double getTimeGap(struct timeval start,struct timeval end);
 
 void setnoblocking(int socket_client){
     int opts;
