@@ -315,7 +315,7 @@ int main(int argc,char* argv[]){
 
     }
     gettimeofday(&finishSpiderTime, NULL);
-    printf("The time to process spider:%f\n",getTimeGap(finishSpiderTime,beginSpiderTime));
+    printf("The time to process spider:%fs\n",getTimeGap(finishSpiderTime,beginSpiderTime));
     close(epfd);
     fclose(out);
     fclose(link);
@@ -331,13 +331,13 @@ int main(int argc,char* argv[]){
     generateA(url_txtDir);
     printf("Init PageRank ...\n");
     gettimeofday(&finishGenerateMatrix, NULL);
-    printf("The time to generate Matrix:%f\n",getTimeGap(finishGenerateMatrix,finishSpiderTime));
+    printf("The time to generate Matrix:%fs\n",getTimeGap(finishGenerateMatrix,finishSpiderTime));
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
     gettimeofday(&finishGeneratePageRank, NULL);
-    printf("The time to generate pageRank:%f\n",getTimeGap(finishGeneratePageRank,finishGenerateMatrix));
-    printf("The total time of this process:%f\n",getTimeGap(finishGeneratePageRank,beginSpiderTime));
+    printf("The time to generate pageRank:%fs\n",getTimeGap(finishGeneratePageRank,finishGenerateMatrix));
+    printf("The total time of this process:%fs\n",getTimeGap(finishGeneratePageRank,beginSpiderTime));
     printPageRank(url_txtDir,result_txtDir);
     remove(tempDir);
     remove("./link.txt");
@@ -349,7 +349,7 @@ double getTimeGap(struct timeval end,struct timeval start){
     seconds  = end.tv_sec  - start.tv_sec;
     useconds = end.tv_usec - start.tv_usec;
     totalSeconds=((seconds) * 1000 + useconds/1000.0) + 0.5;
-    return totalSeconds;
+    return totalSeconds/1000;
 }
 void List(char *path,FILE *link,Queue* q) {
     struct dirent *ent = NULL;
