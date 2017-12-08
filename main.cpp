@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <time.h>
+#include <sys/time.h>
 #include <sys/epoll.h>
 #include "url.h"
 #include "matrix.h"
@@ -18,8 +18,6 @@
 #define DEFAULT_PAGE_BUF_SIZE 1024 * 1024
 #define MAX_PATH_LENGTH 1024
 #define MAX_CONNECT_NUM 60
-//todo
-#define CLOCKS_PER_SECOND 1
 
 using namespace std;
 
@@ -43,6 +41,7 @@ void List(char *path,FILE *link,Queue* q);
 void sendRequest(int isIndex,int *socket_client);
 int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *url,AC_STRUCT *tree,Queue* q);
 void setnoblocking(int socket_client);
+double getTimeGap(struct timeval *start,struct timeval *end);
 
 void setnoblocking(int socket_client){
     int opts;
@@ -171,7 +170,9 @@ int revResponse(int socket_client,int ContentLength,FILE *out,FILE *link,char *u
 }
 
 int main(int argc,char* argv[]){
-    long beginSpiderTime=clock();//记录程序开始时间
+    struct timeval beginSpiderTime, finishSpiderTime, finishGenerateMatrix, finishGeneratePageRank;
+    //记录程序开始时间
+    gettimeofday(&beginSpiderTime, NULL);
     int socket_client;
     int isIndex;
     int ContentLength = DEFAULT_PAGE_BUF_SIZE;
@@ -313,12 +314,12 @@ int main(int argc,char* argv[]){
         }
 
     }
-    long finishSpiderTime=clock();
-    printf("The time to process spider:%ld\n",(finishSpiderTime-beginSpiderTime)/CLOCKS_PER_SECOND);
+    gettimeofday(&finishSpiderTime, NULL);
+    printf("The time to process spider:%f\n",getTimeGap(finishSpiderTime,beginSpiderTime));
     close(epfd);
     fclose(out);
     fclose(link);
-    printf("\n***** Total:%d *****\n",urlId);
+    printf("\n***** Total url number:%d *****\n",urlId);
     printf("Malloc space for matrix G ...\n");
     mallocEllCoo(urlId);
     printf("Load file to matrix G ...\n");
@@ -329,18 +330,26 @@ int main(int argc,char* argv[]){
     printf("Generate matrix A ...\n");
     generateA(url_txtDir);
     printf("Init PageRank ...\n");
-    long finishGenerateMatrix=clock();
-    printf("The time to generate Matrix:%ld\n",(finishGenerateMatrix-finishSpiderTime)/CLOCKS_PER_SECOND);
+    gettimeofday(&finishGenerateMatrix, NULL);
+    printf("The time to generate Matrix:%f\n",getTimeGap(finishGenerateMatrix,finishSpiderTime));
     initPageRank();
     printf("Generate PageRank ...\n");
     generatePageRank();
-    long finishGeneratePageRank=clock();
-    printf("The time to generate Matrix:%ld\n",(finishGeneratePageRank-finishGenerateMatrix)/CLOCKS_PER_SECOND);
-    printf("The total time of this process:%ld\n",(finishGeneratePageRank-beginSpiderTime)/CLOCKS_PER_SECOND);
+    gettimeofday(&finishGeneratePageRank, NULL);
+    printf("The time to generate pageRank:%f\n",getTimeGap(finishGeneratePageRank,finishGenerateMatrix));
+    printf("The total time of this process:%f\n",getTimeGap(finishGeneratePageRank,beginSpiderTime));
     printPageRank(url_txtDir,result_txtDir);
     remove(tempDir);
     remove("./link.txt");
     return 0;
+}
+double getTimeGap(struct timeval end,struct timeval start){
+    long seconds, useconds;
+    double totalSeconds;
+    seconds  = end.tv_sec  - start.tv_sec;
+    useconds = end.tv_usec - start.tv_usec;
+    totalSeconds=((seconds) * 1000 + useconds/1000.0) + 0.5;
+    return totalSeconds;
 }
 void List(char *path,FILE *link,Queue* q) {
     struct dirent *ent = NULL;
