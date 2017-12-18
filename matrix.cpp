@@ -388,7 +388,7 @@ void printPageRank(char *urlTxtDir,char *resultTxtDir){
             j--;
         }
         memset(writeBuf,0,strlen(writeBuf));
-        sprintf(writeBuf,"%s%f\n",buffer,pageRank[maxIndex]);
+        sprintf(writeBuf,"%s %f\n",buffer,pageRank[maxIndex]);
         fputs(writeBuf,fp);
 
         lastMax=pageRank[maxIndex];
